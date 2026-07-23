@@ -1,0 +1,28 @@
+#!/bin/bash
+# SessionStart: 진행 중 기능의 context.md를 안내하고, 30일 초과 미갱신은 아카이브 검토를 제안.
+# 진행 중 기능이 없으면 침묵 (토큰 낭비 방지).
+set -uo pipefail
+. "$(dirname "$0")/lib/common.sh" || exit 0
+
+lines=""
+while IFS= read -r f; do
+  status=$(fm_get "$f" "상태")
+  updated=$(fm_get "$f" "마지막 갱신")
+  case "$status" in 완료*) continue ;; esac
+  rel="${f#"$PROJECT_DIR"/}"
+  extra=""
+  days=$(days_since "$updated")
+  if [ -n "$days" ] && [ "$days" -gt 30 ]; then
+    extra=" — ${days}일 경과: 계속 진행할지, specs/_archive/로 옮길지 검토"
+  fi
+  lines="${lines}- ${rel} (상태: ${status:-미기재}, 마지막 갱신: ${updated:-미기재})${extra}"$'\n'
+done < <(list_feature_contexts)
+
+[ -z "$lines" ] && exit 0
+
+msg="[ACTIVE FEATURES] 진행 중인 기능 문서:
+${lines}작업 시작 전 해당 context.md를 읽고, 현재 상태를 한 문단으로 요약해 사용자에게 확인하세요."
+
+jq -n --arg ctx "$msg" \
+  '{hookSpecificOutput:{hookEventName:"SessionStart",additionalContext:$ctx}}'
+exit 0
