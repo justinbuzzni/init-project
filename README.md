@@ -18,7 +18,8 @@ specs/
 └── [feature-name]/      # 진행 중 기능의 작업 문서
 .claude/
 ├── settings.json        # 훅 와이어링
-└── hooks/               # 리마인더 훅 (bash + jq)
+├── hooks/               # 리마인더 훅 (bash + jq)
+└── skills/              # /feature, /handoff 스킬 (선택적 커맨드)
 ```
 
 ## 시작하기
@@ -37,6 +38,13 @@ specs/
 | SessionStart | 진행 중 기능의 `context.md` 안내 + 30일 초과 미갱신 알림 |
 | PostToolUse (Edit/Write) | 코드 수정 후 tasks.md/context.md 동기화 리마인더 (30분 스로틀) |
 | PostToolUse (Bash) | `git commit`에 코드만 있고 문서 갱신이 없으면 경고 |
+
+## 스킬 (선택적 커맨드)
+
+훅이 자동 집행하므로 평상시엔 일반 대화만으로 충분하고, 명시적 흐름이 필요할 때 사용합니다:
+
+- `/feature [이름] [설명]` — 새 기능 시작: specs 문서 세트 생성 → 계획 수립 → 승인 대기
+- `/handoff` — 세션 인수인계: 변경 마무리 → context.md/tasks.md 동기화 → 다음 시작점 기록
 
 ## 핵심 원칙
 

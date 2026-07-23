@@ -176,6 +176,8 @@ specs/
 - 없으면 `specs/[feature-name]/` 생성 후 `specs/_templates/`에서 복사하여 `spec.md` → `plan.md` → `tasks.md` 순으로 작성
 - `spec.md`는 승인 후에는 사용자 지시 없이 수정 금지
 
+> 이 절차는 `/feature [이름] [설명]` 스킬(`.claude/skills/feature/`)로 실행할 수 있다. 커맨드는 **선택** — 일반 대화로 시작해도 같은 절차를 따른다.
+
 ### 2.3 Phase-Based Implementation
 
 #### Phase 1: Planning (No Code)
@@ -272,6 +274,8 @@ specs/
 2. `context.md` 갱신 — 특히 "다음 세션 시작점"을 구체적으로
 3. `tasks.md` 체크 상태 동기화
 4. 필요 시 **"세션 초기화(Reset) 요청"**
+
+> 이 프로토콜은 `/handoff` 스킬(`.claude/skills/handoff/`)로 실행할 수 있다. 커맨드는 **선택**이다.
 
 ### 2.7 자동화 (훅)
 
