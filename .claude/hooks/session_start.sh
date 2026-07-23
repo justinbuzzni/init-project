@@ -20,8 +20,14 @@ done < <(list_feature_contexts)
 
 [ -z "$lines" ] && exit 0
 
+mem_note=""
+if [ -f "$PROJECT_DIR/.mcp.json" ] && grep -q "claude-memory-layer" "$PROJECT_DIR/.mcp.json" 2>/dev/null; then
+  mem_note="
+과거 맥락·교훈은 mem-context-pack / mem-lesson-list로 회수할 수 있습니다 (AGENTS.md §2.8)."
+fi
+
 msg="[ACTIVE FEATURES] 진행 중인 기능 문서:
-${lines}작업 시작 전 해당 context.md를 읽고, 현재 상태를 한 문단으로 요약해 사용자에게 확인하세요."
+${lines}작업 시작 전 해당 context.md를 읽고, 현재 상태를 한 문단으로 요약해 사용자에게 확인하세요.${mem_note}"
 
 jq -n --arg ctx "$msg" \
   '{hookSpecificOutput:{hookEventName:"SessionStart",additionalContext:$ctx}}'
