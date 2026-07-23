@@ -24,17 +24,34 @@ specs/
 
 ## 시작하기
 
+### 방식 A — 서브모듈 (권장, 중앙 업데이트)
+
+규칙·훅·스킬이 서브모듈에서 오므로, 스타터가 개선되면 `git submodule update --remote`로 모든 프로젝트에 전파됩니다. (결정 배경: [ADR-001](docs/adr/001-submodule-distribution.md))
+
+```bash
+cd /path/to/your-project
+git submodule add <repo-url> init-project
+bash init-project/scripts/bootstrap.sh   # 멱등 — 기존 파일은 건너뜀
+```
+
+부트스트랩이 생성/연결하는 것: CLAUDE.md·AGENTS.md 포인터, `docs/` 뼈대(복사), `specs/_templates`(심링크), `.claude/settings.json`(훅을 서브모듈 경로로 와이어링), `.claude/skills/*`(심링크), `.mcp.json`.
+
+### 방식 B — 복사형 스타터 (단일 프로젝트)
+
 1. 이 저장소를 새 프로젝트로 복사(또는 clone 후 remote 변경)
-2. `docs/ARCHITECTURE.md`, `docs/CONVENTIONS.md`의 placeholder를 실제 내용으로 채우기
-3. `jq` 설치 확인 (훅이 사용 — 대부분 시스템에 기본 포함)
-4. 메모리 레이어 설치 (선택이지만 강력 권장 — 학습 루프의 기반):
+
+### 공통 후속 단계
+
+1. `docs/ARCHITECTURE.md`, `docs/CONVENTIONS.md`의 placeholder를 실제 내용으로 채우기
+2. `jq` 설치 확인 (훅이 사용 — 대부분 시스템에 기본 포함)
+3. 메모리 레이어 설치 (선택이지만 강력 권장 — 학습 루프의 기반):
    ```bash
    npm install -g claude-memory-layer@latest
    claude-memory-layer install   # 최초 1회, Claude Code 훅 등록 (자동 대화 축적)
    claude-memory-layer import    # 프로젝트 디렉토리에서 — 기존 세션이 있다면 적재
    ```
    MCP 서버는 `.mcp.json`에 이미 등록되어 있어 별도 설정이 필요 없습니다.
-5. Claude Code로 작업 시작 — 워크플로우는 `AGENTS.md`가 안내
+4. Claude Code로 작업 시작 — 워크플로우는 `AGENTS.md`가 안내
 
 ## 학습 루프 (사용할수록 똑똑해지는 구조)
 
