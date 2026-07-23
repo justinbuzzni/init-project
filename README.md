@@ -27,7 +27,26 @@ specs/
 1. 이 저장소를 새 프로젝트로 복사(또는 clone 후 remote 변경)
 2. `docs/ARCHITECTURE.md`, `docs/CONVENTIONS.md`의 placeholder를 실제 내용으로 채우기
 3. `jq` 설치 확인 (훅이 사용 — 대부분 시스템에 기본 포함)
-4. Claude Code로 작업 시작 — 워크플로우는 `AGENTS.md`가 안내
+4. 메모리 레이어 설치 (선택이지만 강력 권장 — 학습 루프의 기반):
+   ```bash
+   npm install -g claude-memory-layer@latest
+   claude-memory-layer install   # 최초 1회, Claude Code 훅 등록 (자동 대화 축적)
+   claude-memory-layer import    # 프로젝트 디렉토리에서 — 기존 세션이 있다면 적재
+   ```
+   MCP 서버는 `.mcp.json`에 이미 등록되어 있어 별도 설정이 필요 없습니다.
+5. Claude Code로 작업 시작 — 워크플로우는 `AGENTS.md`가 안내
+
+## 학습 루프 (사용할수록 똑똑해지는 구조)
+
+[claude-memory-layer](https://www.npmjs.com/package/claude-memory-layer)를 기반으로, 에이전트가 경험에서 배우고 스스로 개선하는 3단 루프를 워크플로우에 내장했습니다 (AGENTS.md §2.8):
+
+```
+① 회수(Recall)    작업 시작 시 mem-context-pack·mem-search로 과거 맥락과 교훈 확인
+② 축적(Capture)   원시 대화는 자동 저장 + 시행착오의 교훈은 mem-lesson-save로 명시 자산화
+③ 승격(Promote)   반복 적용된 교훈 → docs/CONVENTIONS.md 규칙 또는 .claude/skills/ 스킬로 승격
+```
+
+문서 체계(`docs/`, `specs/`)는 사람이 리뷰하는 공식 기록, 메모리 레이어는 검색 가능한 경험 자산 — 두 층이 상호보완합니다. `/learn` 스킬이 회고와 승격 검토를 수행합니다.
 
 ## 훅 (자동 집행)
 

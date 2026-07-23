@@ -156,6 +156,7 @@ specs/
 
 | 순서 | 파일 | 목적 |
 |------|------|------|
+| 0 | `mem-context-pack` (query=이번 작업) | 과거 맥락·교훈 회수 (§2.8, 메모리 레이어 사용 시) |
 | 1 | `docs/ARCHITECTURE.md` | 전체 구조 — 변경이 어디에 속하는지 |
 | 2 | `docs/CONVENTIONS.md` | 명령어, 컨벤션 |
 | 3 | `specs/[active-feature]/spec.md` | Goal — 변경 불가한 요구사항 |
@@ -233,7 +234,8 @@ specs/
 1. `context.md`에 완료 요약 기록
 2. `plan.md`의 해당 단계를 완료(Done) 처리
 3. **Self-Correction**: 다음 단계 진행 전 `spec.md` 요구사항 위반 여부 검토
-4. 기능 전체 완료 시: 핵심 결정을 ADR/`ARCHITECTURE.md`로 승격 → `context.md` 프론트매터를 `상태: 완료`로 표기 → 폴더를 `specs/_archive/`로 이동
+4. **교훈 자산화**: 이번 기능에서 일반화되는 교훈이 있으면 `mem-lesson-save`로 저장, 반복된 교훈은 규칙·스킬 승격 검토 (§2.8, `/learn`)
+5. 기능 전체 완료 시: 핵심 결정을 ADR/`ARCHITECTURE.md`로 승격 → `context.md` 프론트매터를 `상태: 완료`로 표기 → 폴더를 `specs/_archive/`로 이동
 
 ### 2.4 Surgical Changes (수술적 변경)
 
@@ -290,6 +292,47 @@ specs/
 
 **설계 원칙**: 차단(deny)하지 않고 리마인더만 주입한다. 진행 중 기능이 없으면 침묵(토큰 낭비 방지). 훅 오류가 워크플로를 막지 않도록 항상 exit 0.
 
+### 2.8 학습 루프 (Memory Layer — 사용할수록 똑똑해지기)
+
+이 프로젝트는 [claude-memory-layer](https://www.npmjs.com/package/claude-memory-layer)로 **세션을 넘어 축적되는 경험 기억**을 관리한다 (MCP 등록: `.mcp.json`).
+문서 체계(§0)가 "사람이 리뷰하는 공식 기록"이라면, 메모리 레이어는 "검색 가능한 경험 자산"이다. 두 층은 대체가 아니라 상호보완이다:
+
+| 층 | 담당 | 축적 방식 |
+|---|---|---|
+| `docs/` + `specs/` | 공식 결정·계획·인수인계 | 에이전트가 작성, 사람이 리뷰 |
+| memory layer | 원시 대화 이력 + 큐레이션된 교훈·체크포인트 | 원시 기록은 자동, 교훈은 명시 저장 |
+
+**① 회수 (Recall) — 작업 시작 시**
+- Context Loading(§2.1)의 0단계로 `mem-context-pack`(query=이번 작업 주제)을 호출해 과거 맥락·타임라인·교훈을 회수
+- 디버깅, 설계 결정, 외부 연동 전에는 `mem-search` / `mem-lesson-list`로 같은 문제를 겪은 적이 있는지 먼저 확인 — **기억에 답이 있는데 같은 시행착오를 반복하는 것은 버그다**
+
+**② 축적 (Capture) — 작업 중**
+- 원시 대화·툴 사용 기록은 패키지 훅이 자동 저장 — 별도 행동 불필요
+- 다음 순간에는 `mem-lesson-save`로 교훈을 **명시적으로** 저장한다:
+  - 시행착오 끝에 원인을 찾았을 때 (trigger=증상·상황, steps=검증된 해결 절차, failureModes=함정)
+  - 두 번 이상 마주칠 수 있는 프로젝트 특수 지식을 발견했을 때
+  - context.md "시도했으나 실패한 접근"에 쓰는 내용 중, 이 기능을 넘어 일반화되는 것
+- 저장하지 말 것: 코드로 자명한 것, 이 기능에서만 유효한 것(context.md로 충분), 비밀·자격증명
+- Phase 완료·세션 종료 시 `mem-checkpoint-create`로 재개 지점을 저장한다 (`/handoff`가 수행)
+
+**③ 승격 (Promote) — 자기 개선의 핵심**
+
+교훈이 반복 적용되면 더 강한 형태로 승격한다. 이 사다리가 "사용할수록 똑똑해지는" 메커니즘이다:
+
+```
+원시 기억 → 교훈(lesson) → 규칙(docs/CONVENTIONS.md·이 가이드) 또는 스킬(.claude/skills/)
+```
+
+- 같은 교훈을 반복(≈3회 이상) 회수·적용했다면 규칙으로의 승격을 사용자에게 제안
+- 순서 있는 절차형 교훈이 안정화되면 스킬로의 승격을 제안
+- 승격은 사용자 승인 후 수행하고, 승격 사실을 lesson에 남겨 중복 회수를 방지
+- 정기 회고와 승격 후보 검토는 `/learn` 스킬이 수행
+
+**규약**
+- `projectPath`: 항상 **메인 저장소의 절대 경로**를 사용 (git worktree 경로 금지 — 경로가 다르면 프로젝트 저장소가 갈라진다)
+- `actor`: `claude-code` (다른 에이전트는 자신의 식별자)
+- 메모리 도구 호출이 실패해도 작업을 중단하지 말 것 — 메모리는 가속기이지 의존성이 아니다
+
 ---
 
 ## 3. 검증 루프 (Verification Loop)
@@ -332,7 +375,8 @@ specs/
 ### 새 기능 워크플로우
 
 ```
-0. Context Loading (훅이 진행 중 기능 알림 → ARCHITECTURE → spec → plan → tasks → context)
+0. Context Loading (훅이 진행 중 기능 알림 → mem-context-pack으로 과거 교훈 회수
+   → ARCHITECTURE → spec → plan → tasks → context)
    → 현재 상태 한 문단 요약 후 사용자 확인
          ↓
 1. 가정을 명시하고, 불명확하면 질문
@@ -351,6 +395,7 @@ specs/
    → 다음 Phase 진행 확인
          ↓
 5. 기능 완료: 핵심 결정을 ADR/ARCHITECTURE.md로 승격
+   → 교훈은 mem-lesson-save, 반복된 교훈은 규칙·스킬로 승격 (/learn)
    → specs/_archive/로 이동
 ```
 
@@ -381,3 +426,4 @@ specs/
 - **"왜 이렇게 했지?"라는 질문에 ADR/결정 로그가 답함**
 - **코드 구조가 ARCHITECTURE.md와 일치함**
 - **완료된 기능이 _archive로 이동해 살아있는 문서만 남음**
+- **같은 시행착오가 두 번 반복되지 않음 — 교훈이 회수되고, 반복된 교훈이 규칙·스킬로 승격됨**
