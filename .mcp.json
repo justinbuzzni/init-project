@@ -1,0 +1,9 @@
+{
+  "mcpServers": {
+    "claude-memory-layer": {
+      "type": "stdio",
+      "command": "claude-memory-layer-mcp",
+      "args": []
+    }
+  }
+}
