@@ -27,7 +27,7 @@ done < <(list_feature_contexts)
 mem_note=""
 if [ -f "$PROJECT_DIR/.mcp.json" ] && grep -q "claude-memory-layer" "$PROJECT_DIR/.mcp.json" 2>/dev/null; then
   mem_note="
-과거 맥락·교훈은 mem-context-pack / mem-lesson-list로 회수할 수 있습니다 (AGENTS.md §2.8)."
+과거 맥락·교훈은 mem-context-pack / mem-lesson-list로 회수할 수 있습니다 (AGENTS.md §2.7)."
 fi
 
 msg="[ACTIVE FEATURES] 진행 중인 기능 문서:
