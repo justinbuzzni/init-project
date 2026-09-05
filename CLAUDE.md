@@ -1,11 +1,10 @@
 # CLAUDE.md
 
-> 공통 가이드는 **AGENTS.md가 유일한 원본**입니다. 규칙 수정은 AGENTS.md에서만 하세요 (여기에 복사 금지 — 드리프트의 원인).
-> 이 파일은 Claude Code 전용 확장만 담습니다.
+공통 운영 정책은 AGENTS.md가 원본이다. 이 파일에 복사하지 않는다.
 
 @AGENTS.md
 
-## Claude Code 전용
+## Claude Code 연결
 
-- **훅**: `.claude/settings.json`에 등록된 리마인더 훅이 컨텍스트 로딩 안내·문서 동기화·커밋 drift 경고를 자동 처리한다 (AGENTS.md §2.7). 훅이 주입하는 `[ACTIVE FEATURES]`, `[SPEC SYNC]` 메시지는 이 가이드의 규칙을 상기시키는 것이므로 따를 것
-- **훅 의존성**: bash + `jq`. 훅 수정 시 스크립트를 샘플 stdin JSON으로 직접 실행해 검증할 것
+- .claude/settings.json은 리마인더 훅을 연결한다. [ACTIVE FEATURES]와 [SPEC SYNC]의 해석은 AGENTS.md §2.7을 따른다. 안내 문구가 독립적인 승인·중단 조건을 만들지는 않는다.
+- 훅은 bash와 jq를 사용한다. 수정할 때 docs/CONVENTIONS.md의 검증 절차를 따른다.
