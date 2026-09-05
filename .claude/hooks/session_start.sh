@@ -9,13 +9,17 @@ lines=""
 while IFS= read -r f; do
   status=$(fm_get "$f" "상태")
   updated=$(fm_get "$f" "마지막 갱신")
+  # 상태 프론트매터가 없는 문서는 "진행 중"이 아니라 추적 대상 밖(레거시)이다.
+  # 이를 진행 중으로 취급하면 오래된 spec 수백 개가 매 세션 컨텍스트를 채워,
+  # 정작 읽어야 할 진행 중 문서와 아래 메모리 회수 안내가 묻힌다.
+  [ -n "$status" ] || continue
   rel="${f#"$PROJECT_DIR"/}"
   extra=""
   days=$(days_since "$updated")
   if [ -n "$days" ] && [ "$days" -gt 30 ]; then
     extra=" — ${days}일 경과: 계속 진행할지, specs/_archive/로 옮길지 검토"
   fi
-  lines="${lines}- ${rel} (상태: ${status:-미기재}, 마지막 갱신: ${updated:-미기재})${extra}"$'\n'
+  lines="${lines}- ${rel} (상태: ${status}, 마지막 갱신: ${updated:-미기재})${extra}"$'\n'
 done < <(list_feature_contexts)
 
 mem_note=""

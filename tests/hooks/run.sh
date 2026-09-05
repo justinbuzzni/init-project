@@ -48,6 +48,15 @@ out=$(CLAUDE_PROJECT_DIR="$project" INIT_PROJECT_CLAUDE_SETTINGS="$TMP/no-cml.js
 assert_json_event "$out" SessionStart
 printf '%s' "$out" | jq -e '.hookSpecificOutput.additionalContext | (contains("mem-lesson-list") | not)' >/dev/null
 
+# 상태 프론트매터가 없는 레거시 context.md 는 추적 대상 밖이므로 활성 기능 목록에
+# 올라오지 않는다. 이것이 무너지면 오래된 spec 수백 개가 매 세션 컨텍스트를 채운다.
+mkdir -p "$project/specs/legacy"
+printf '%s\n' '# 예전 기능 메모' '프론트매터 없음' > "$project/specs/legacy/context.md"
+out=$(CLAUDE_PROJECT_DIR="$project" INIT_PROJECT_CLAUDE_SETTINGS="$TMP/no-cml.json" bash "$HOOKS/session_start.sh" < "$FIXTURES/session_start.json")
+assert_json_event "$out" SessionStart
+printf '%s' "$out" | jq -e '.hookSpecificOutput.additionalContext | contains("specs/demo") and (contains("specs/legacy") | not) and (contains("상태: 미기재") | not)' >/dev/null
+rm -rf "$project/specs/legacy"
+
 marker_dir="$TMP/markers"
 mkdir -p "$marker_dir"
 out=$(CLAUDE_PROJECT_DIR="$project" INIT_PROJECT_HOOK_TMPDIR="$marker_dir" bash "$HOOKS/stop_lesson_reminder.sh" < "$FIXTURES/stop.json")
