@@ -14,6 +14,7 @@ list_feature_contexts() {
     case "$f" in
       */_templates/*|*/_archive/*) continue ;;
     esac
+    case "$(fm_get "$f" "상태")" in 완료*) continue ;; esac
     echo "$f"
   done
 }

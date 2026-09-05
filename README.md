@@ -1,91 +1,78 @@
 # init-project — Agentic 개발 스타터
 
-AI 코딩 에이전트(Claude Code 등)와 함께 개발하는 프로젝트의 초기 환경 템플릿입니다.
-TDD + Tidy First 워크플로우, 3레벨 문서 체계(docs / specs / context), 그리고 규칙을 런타임에 자동 집행하는 리마인더 훅을 제공합니다.
+에이전트 공통 지침, 프로젝트 문서 양식, 선택적 스킬과 Claude Code 리마인더 훅을 배포한다.
 
-## 구조
+## 어디를 관리하나
 
-```
-AGENTS.md                # 공통 가이드 원본 (Single Source) — 모든 AI 에이전트용
-CLAUDE.md                # Claude Code 전용 — AGENTS.md를 import + 전용 확장
-docs/
-├── ARCHITECTURE.md      # 시스템 구조 SSOT (프로젝트 시작 시 채우기)
-├── CONVENTIONS.md       # 컨벤션 + 검증 명령어 (프로젝트 시작 시 채우기)
-└── adr/                 # Architecture Decision Records
-specs/
-├── _templates/          # spec / plan / tasks / context / adr 표준 양식
-├── _archive/            # 완료된 기능 문서 보관소
-└── [feature-name]/      # 진행 중 기능의 작업 문서
-.claude/
-├── settings.json        # 훅 와이어링
-├── hooks/               # 리마인더 훅 (bash + jq)
-└── skills/              # /feature, /handoff 스킬 (선택적 커맨드)
-```
+| 필요 | 원본 |
+|------|------|
+| 자율성·명확화·승인·완료 정책 | [AGENTS.md](AGENTS.md) |
+| 스타터 구조·소비 프로젝트 구조 작성 | [ARCHITECTURE.md](docs/ARCHITECTURE.md) |
+| 검증 명령·컨벤션 | [CONVENTIONS.md](docs/CONVENTIONS.md) |
+| 배포 결정 | [ADR-001](docs/adr/001-submodule-distribution.md) |
+| 진행 중 기능 | specs/[feature]/ |
+| 문서 양식·완료 기록 | specs/_templates/, specs/_archive/ |
+| 계획·인수인계·회고 절차 | .claude/skills/ |
+| 훅 연결·구현 | .claude/settings.json, .claude/hooks/ |
 
-## 시작하기
+정책을 바꾸면 스킬·템플릿·훅 안내의 일관성을 함께 검토한다. 실제 중단·승인 기준은 AGENTS.md가 원본이다.
 
-### 방식 A — 서브모듈 (권장, 중앙 업데이트)
+## 도입
 
-규칙·훅·스킬이 서브모듈에서 오므로, 스타터가 개선되면 `git submodule update --remote`로 모든 프로젝트에 전파됩니다. (결정 배경: [ADR-001](docs/adr/001-submodule-distribution.md))
+### 서브모듈
+
+소비 프로젝트 루트에서 실행한다.
 
 ```bash
-cd /path/to/your-project
 git submodule add <repo-url> init-project
-bash init-project/scripts/bootstrap.sh   # 멱등 — 기존 파일은 건너뜀
+bash init-project/scripts/bootstrap.sh
 ```
 
-부트스트랩이 생성/연결하는 것: CLAUDE.md·AGENTS.md 포인터, `docs/` 뼈대(복사), `specs/_templates`(심링크), `.claude/settings.json`(훅을 서브모듈 경로로 와이어링), `.claude/skills/*`(심링크), `.mcp.json`.
+부트스트랩은 기존 파일을 보존하며 다음을 생성한다.
 
-### 방식 B — 복사형 스타터 (단일 프로젝트)
+| 산출물 | 방식 | 업데이트 시 주의 |
+|--------|------|------------------|
+| AGENTS.md·CLAUDE.md | 공통 지침 포인터 생성 | 기존 파일은 자동 병합하지 않음 |
+| docs/ARCHITECTURE.md·CONVENTIONS.md | 복사 | 소비 프로젝트 내용으로 작성·유지 |
+| specs/_templates·.claude/skills/* | 심링크 | 스타터 버전 변경 시 함께 바뀜 |
+| .claude/settings.json | 훅 경로를 스타터로 치환 | 기존 설정은 수동 병합 |
+| .mcp.json | 없으면 복사 | 실제 MCP 가용성은 별도 확인 |
 
-1. 이 저장소를 새 프로젝트로 복사(또는 clone 후 remote 변경)
+기본 디렉터리명 init-project 사용을 권장한다. 다른 배치는 스크립트의 상대 심링크 경로를 검증해야 한다.
+업데이트는 소비 프로젝트별로 스타터 변경을 검토한 뒤 해당 서브모듈 버전을 갱신한다. 여러 프로젝트가 자동으로 갱신되는 것은 아니다.
 
-### 공통 후속 단계
+### 복사형
 
-1. `docs/ARCHITECTURE.md`, `docs/CONVENTIONS.md`의 placeholder를 실제 내용으로 채우기
-2. `jq` 설치 확인 (훅이 사용 — 대부분 시스템에 기본 포함)
-3. 메모리 레이어 설치 (선택이지만 강력 권장 — 학습 루프의 기반):
-   ```bash
-   npm install -g claude-memory-layer@latest
-   claude-memory-layer install   # 최초 1회, Claude Code 훅 등록 (자동 대화 축적)
-   claude-memory-layer import    # 프로젝트 디렉토리에서 — 기존 세션이 있다면 적재
-   ```
-   MCP 서버는 `.mcp.json`에 이미 등록되어 있어 별도 설정이 필요 없습니다.
-4. Claude Code로 작업 시작 — 워크플로우는 `AGENTS.md`가 안내
+저장소를 새 프로젝트로 복사하거나 clone한 뒤 remote를 변경한다. 이후 스타터 변경은 필요한 파일을 직접 반영한다.
 
-## 학습 루프 (사용할수록 똑똑해지는 구조)
+### 도입 후
 
-[claude-memory-layer](https://www.npmjs.com/package/claude-memory-layer)를 기반으로, 에이전트가 경험에서 배우고 스스로 개선하는 3단 루프를 워크플로우에 내장했습니다 (AGENTS.md §2.8):
+1. docs의 **소비 프로젝트 작성 영역**을 실제 구조·검증 명령으로 채운다. 스타터 설명을 애플리케이션 구조로 간주하지 않는다.
+2. Claude Code 훅을 사용할 경우 bash와 jq 가용성을 확인한다.
+3. 메모리를 사용할 경우 해당 패키지 설치·연결 상태를 확인한다. .mcp.json 존재만으로 인증·실행·자동 기록을 보장하지 않는다.
+4. [CONVENTIONS.md](docs/CONVENTIONS.md)에 따라 연결과 검증 명령을 확인한다.
 
-```
-① 회수(Recall)    작업 시작 시 mem-context-pack·mem-search로 과거 맥락과 교훈 확인
-② 축적(Capture)   원시 대화는 자동 저장 + 시행착오의 교훈은 mem-lesson-save로 명시 자산화
-③ 승격(Promote)   반복 적용된 교훈 → docs/CONVENTIONS.md 규칙 또는 .claude/skills/ 스킬로 승격
-```
+## 스킬
 
-문서 체계(`docs/`, `specs/`)는 사람이 리뷰하는 공식 기록, 메모리 레이어는 검색 가능한 경험 자산 — 두 층이 상호보완합니다. `/learn` 스킬이 회고와 승격 검토를 수행합니다.
+- [/feature](.claude/skills/feature/SKILL.md): 기능 계획 문서 준비와 기존 승인 확인.
+- [/handoff](.claude/skills/handoff/SKILL.md): 변경을 보존하며 검증·승인 상태와 재개 지점 기록.
+- [/learn](.claude/skills/learn/SKILL.md): 검증된 교훈 정리와 승인받을 승격안 준비.
 
-## 훅 (자동 집행)
+일반 대화에도 공통 정책을 적용한다. 스킬은 선택적인 실행 보조다.
 
-`.claude/settings.json`에 등록된 3개 훅이 규칙을 리마인더 방식으로 집행합니다 (차단 없음):
+## 훅
 
-| 훅 | 동작 |
-|---|---|
-| SessionStart | 진행 중 기능의 `context.md` 안내 + 30일 초과 미갱신 알림 |
-| PostToolUse (Edit/Write) | 코드 수정 후 tasks.md/context.md 동기화 리마인더 (30분 스로틀) |
-| PostToolUse (Bash) | `git commit`에 코드만 있고 문서 갱신이 없으면 경고 |
+SessionStart는 등록된 CML의 버전이 2.4.0 이상이면 `mem-lesson-get` 우선, 이전 버전이면 기존 회수 방법과 업그레이드를 안내하며 등록·버전을 확인할 수 없으면 CML 안내를 생략한다.
+훅은 차단·승인 집행기가 아니다. 상태 보고와 승인 판단은 [AGENTS.md](AGENTS.md) §2.7을 따른다.
+훅이 출력하지 않아도 진행 기능이나 동기화 필요가 없다고 단정하지 않는다.
 
-## 스킬 (선택적 커맨드)
+| 이벤트 | 훅 | 역할 |
+|--------|-----|------|
+| SessionStart | `session_start.sh` | 진행 기능과 CML 버전별 교훈 회수 안내 |
+| PostToolUse (Edit/Write) | `posttool_edit.sh` | 편집 후 문서 동기화 리마인더 |
+| PostToolUse (Bash) | `posttool_commit.sh` | 커밋의 문서 누락 리마인더 |
+| Stop | `stop_lesson_reminder.sh` | 재사용 가능한 교훈 저장 리마인더 |
 
-훅이 자동 집행하므로 평상시엔 일반 대화만으로 충분하고, 명시적 흐름이 필요할 때 사용합니다:
-
-- `/feature [이름] [설명]` — 새 기능 시작: 기억 회수 → specs 문서 세트 생성 → 계획 수립 → 승인 대기
-- `/handoff` — 세션 인수인계: 변경 마무리 → 문서 동기화 → 교훈·체크포인트 저장 → 다음 시작점 기록
-- `/learn` — 회고: 시행착오에서 교훈 추출·저장 → 반복된 교훈은 규칙·스킬로 승격 제안
-
-## 핵심 원칙
-
-- **TDD**: Red → Green → Refactor, 테스트 없는 코드 금지
-- **Tidy First**: 구조적 변경과 동작 변경을 커밋에서 분리
-- **문서는 미래 세션의 메모리**: "무엇"이 아니라 "왜"를 기록
-- **결정에는 재검토 조건**: 재검토 조건 없는 결정은 부패의 원인
+훅 수정 검증은 `bash tests/hooks/run.sh`로 실행한다.
+테스트는 `INIT_PROJECT_CLAUDE_SETTINGS`와 `INIT_PROJECT_HOOK_TMPDIR`로 임시 설정·마커 경로를 주입하며 실제 사용자 설정을 읽거나 쓰지 않는다.
+기존 소비 프로젝트는 서브모듈 갱신과 gitlink 커밋 후 Stop 등록 여부를 확인한다. bootstrap은 기존 settings.json을 덮어쓰지 않으므로 누락된 등록은 해당 프로젝트에서 별도로 병합해야 한다.
