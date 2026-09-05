@@ -81,7 +81,7 @@ done
 
 echo ""
 echo "부트스트랩 완료. 다음 단계:"
-echo "  1) docs/ARCHITECTURE.md, docs/CONVENTIONS.md의 placeholder를 실제 내용으로 채우세요"
+echo "  1) docs/ARCHITECTURE.md의 소비 프로젝트 작성 영역과 docs/CONVENTIONS.md의 소비 프로젝트 명령어를 실제 내용으로 채우세요"
 echo "  2) (권장) npm i -g claude-memory-layer && claude-memory-layer install && claude-memory-layer import"
 echo "  3) Claude Code를 재시작하면 훅·스킬이 활성화됩니다"
 echo "  4) 스타터 업데이트 반영: git submodule update --remote $SUB"

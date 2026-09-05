@@ -15,5 +15,5 @@ if [ -f "$marker" ] && [ -n "$(find "$marker" -mmin -30 2>/dev/null)" ]; then
 fi
 touch "$marker" 2>/dev/null || exit 0
 
-jq -n '{hookSpecificOutput:{hookEventName:"Stop",additionalContext:"[LESSON CHECK] 재사용 가능한 교훈이 있다면 mem-lesson-save로 저장하세요.\ntrigger에는 미래의 내가 검색할 증상·명령어·에러 문자열을 그대로 넣으세요(회수는 어휘 겹침으로 결정됩니다).\n환경 의존 실패·일회성 서사·미검증 우회는 저장하지 마세요. 판단이 안 서면 mem-lesson-candidates로 후보를 확인하세요. 단순 진행 상황 보고라면 무시해도 됩니다."}}' 2>/dev/null
+jq -n '{systemMessage:"[LESSON CHECK] 재사용 가능한 교훈이 있다면 mem-lesson-save로 저장하세요.\ntrigger에는 미래의 내가 검색할 증상·명령어·에러 문자열을 그대로 넣으세요(회수는 어휘 겹침으로 결정됩니다).\n환경 의존 실패·일회성 서사·미검증 우회는 저장하지 마세요. 판단이 안 서면 mem-lesson-candidates로 후보를 확인하세요. 단순 진행 상황 보고라면 무시해도 됩니다."}' 2>/dev/null
 exit 0

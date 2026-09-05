@@ -9,7 +9,6 @@ lines=""
 while IFS= read -r f; do
   status=$(fm_get "$f" "상태")
   updated=$(fm_get "$f" "마지막 갱신")
-  case "$status" in 완료*) continue ;; esac
   rel="${f#"$PROJECT_DIR"/}"
   extra=""
   days=$(days_since "$updated")

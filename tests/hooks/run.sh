@@ -12,6 +12,16 @@ assert_json_event() {
   printf '%s' "$output" | jq -e --arg event "$expected" '.hookSpecificOutput.hookEventName == $event' >/dev/null
 }
 
+assert_stop_message() {
+  local output=$1
+  printf '%s' "$output" | jq -e '
+    .systemMessage
+    and (.continue? != false)
+    and (has("decision") | not)
+    and ((.hookSpecificOutput?.additionalContext // "") == "")
+  ' >/dev/null
+}
+
 make_settings() {
   local version=$1 root=$2
   mkdir -p "$root/node_modules/claude-memory-layer/dist/hooks"
@@ -41,8 +51,8 @@ printf '%s' "$out" | jq -e '.hookSpecificOutput.additionalContext | (contains("m
 marker_dir="$TMP/markers"
 mkdir -p "$marker_dir"
 out=$(CLAUDE_PROJECT_DIR="$project" INIT_PROJECT_HOOK_TMPDIR="$marker_dir" bash "$HOOKS/stop_lesson_reminder.sh" < "$FIXTURES/stop.json")
-assert_json_event "$out" Stop
-printf '%s' "$out" | jq -e '.hookSpecificOutput.additionalContext | contains("어휘 겹침") and contains("환경 의존 실패")' >/dev/null
+assert_stop_message "$out"
+printf '%s' "$out" | jq -e '.systemMessage | contains("어휘 겹침") and contains("환경 의존 실패")' >/dev/null
 second=$(CLAUDE_PROJECT_DIR="$project" INIT_PROJECT_HOOK_TMPDIR="$marker_dir" bash "$HOOKS/stop_lesson_reminder.sh" < "$FIXTURES/stop.json")
 [ -z "$second" ]
 
@@ -112,10 +122,10 @@ out=$(CLAUDE_PROJECT_DIR="$TMP/empty-project" INIT_PROJECT_CLAUDE_SETTINGS="$TMP
 # input never creates a default marker or escapes the injected marker directory.
 jq '.session_id = "another-session"' "$FIXTURES/stop.json" > "$TMP/another.json"
 out=$(CLAUDE_PROJECT_DIR="$project" INIT_PROJECT_HOOK_TMPDIR="$marker_dir" bash "$HOOKS/stop_lesson_reminder.sh" < "$TMP/another.json")
-assert_json_event "$out" Stop
+assert_stop_message "$out"
 touch -t 200001010000 "$marker_dir/claude_lesson_reminder_test-session"
 out=$(CLAUDE_PROJECT_DIR="$project" INIT_PROJECT_HOOK_TMPDIR="$marker_dir" bash "$HOOKS/stop_lesson_reminder.sh" < "$FIXTURES/stop.json")
-assert_json_event "$out" Stop
+assert_stop_message "$out"
 for input in '{bad' '{"session_id":"../escape"}' '{"session_id":7}' '[]'; do
   out=$(printf '%s' "$input" | CLAUDE_PROJECT_DIR="$project" INIT_PROJECT_HOOK_TMPDIR="$marker_dir" bash "$HOOKS/stop_lesson_reminder.sh" 2> "$TMP/stderr")
   [ -z "$out" ] && [ ! -s "$TMP/stderr" ]
