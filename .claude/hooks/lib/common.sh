@@ -3,6 +3,8 @@
 
 PROJECT_DIR="${CLAUDE_PROJECT_DIR:-.}"
 SPECS_DIR="$PROJECT_DIR/specs"
+CML_SETTINGS_FILE="${INIT_PROJECT_CLAUDE_SETTINGS:-${HOME:-}/.claude/settings.json}"
+HOOK_TMPDIR="${INIT_PROJECT_HOOK_TMPDIR:-${TMPDIR:-/tmp}}"
 
 # 진행 중 기능의 context.md 목록 (_templates, _archive 제외)
 list_feature_contexts() {
