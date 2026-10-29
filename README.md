@@ -68,7 +68,7 @@ SessionStart는 등록된 CML의 버전이 2.4.0 이상이면 `mem-lesson-get` �
 
 | 이벤트 | 훅 | 역할 |
 |--------|-----|------|
-| SessionStart | `session_start.sh` | 진행 기능과 CML 버전별 교훈 회수 안내 |
+| SessionStart | `session_start.sh` | 진행 기능(최근 갱신 20건 + 나머지 건수, 전체는 `--all`)과 CML 버전별 교훈 회수 안내 |
 | PostToolUse (Edit/Write) | `posttool_edit.sh` | 편집 후 문서 동기화 리마인더 |
 | PostToolUse (Bash) | `posttool_commit.sh` | 커밋의 문서 누락 리마인더 |
 | Stop | `stop_lesson_reminder.sh` | 턴을 연장하지 않는 사용자 표시용 교훈 저장 리마인더 |
