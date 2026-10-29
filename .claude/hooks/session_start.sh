@@ -6,21 +6,31 @@ set -uo pipefail
 command -v jq >/dev/null 2>&1 || exit 0
 
 lines=""
-while IFS= read -r f; do
-  status=$(fm_get "$f" "상태")
-  updated=$(fm_get "$f" "마지막 갱신")
-  # 상태 프론트매터가 없는 문서는 "진행 중"이 아니라 추적 대상 밖(레거시)이다.
-  # 이를 진행 중으로 취급하면 오래된 spec 수백 개가 매 세션 컨텍스트를 채워,
-  # 정작 읽어야 할 진행 중 문서와 아래 메모리 회수 안내가 묻힌다.
-  [ -n "$status" ] || continue
-  rel="${f#"$PROJECT_DIR"/}"
+date_values=()
+date_days=()
+date_count=0
+while IFS=$'\034' read -r status updated context_file; do
+  rel="${context_file#"$PROJECT_DIR"/}"
   extra=""
-  days=$(days_since "$updated")
+  days=""
+  if [ -n "$updated" ]; then
+    cache_index=0
+    while [ "$cache_index" -lt "$date_count" ]; do
+      [ "${date_values[$cache_index]}" = "$updated" ] && break
+      cache_index=$((cache_index + 1))
+    done
+    if [ "$cache_index" -eq "$date_count" ]; then
+      date_values[$date_count]="$updated"
+      date_days[$date_count]=$(days_since "$updated")
+      date_count=$((date_count + 1))
+    fi
+    days=${date_days[$cache_index]}
+  fi
   if [ -n "$days" ] && [ "$days" -gt 30 ]; then
     extra=" — ${days}일 경과: 계속 진행할지, specs/_archive/로 옮길지 검토"
   fi
   lines="${lines}- ${rel} (상태: ${status}, 마지막 갱신: ${updated:-미기재})${extra}"$'\n'
-done < <(list_feature_contexts)
+done < <(feature_context_metadata)
 
 mem_note=""
 # Tokenize the registered command without executing it; preserve quoted spaces.
