@@ -78,6 +78,14 @@ all=$(CLAUDE_PROJECT_DIR="$many" INIT_PROJECT_CLAUDE_SETTINGS="$TMP/no-cml.json"
 [ "$(printf '%s\n' "$all" | head -1)" = '- specs/f24/context.md (상태: 진행중(24), 마지막 갱신: 2030-01-24)' ]
 printf '%s\n' "$all" | grep -q '^- specs/old/context.md (상태: 진행중(old), 마지막 갱신: 2000-01-01) — [0-9]*일 경과'
 [ "$(printf '%s\n' "$all" | tail -1)" = '- specs/undated/context.md (상태: 진행중(undated), 마지막 갱신: 미기재)' ]
+# 안내된 --all 명령은 공백·따옴표가 든 훅 경로에서도 프로젝트 루트에서 그대로 실행된다.
+spaced="$TMP/hook dir's copy"
+mkdir -p "$spaced"
+cp -R "$HOOKS/." "$spaced/"
+out=$(CLAUDE_PROJECT_DIR="$many" INIT_PROJECT_CLAUDE_SETTINGS="$TMP/no-cml.json" bash "$spaced/session_start.sh" < "$FIXTURES/session_start.json")
+advertised=$(printf '%s' "$out" | jq -r '.hookSpecificOutput.additionalContext' | sed -n 's/^- 외 .*전체 목록: 프로젝트 루트에서 `\(.*\)`$/\1/p')
+[ -n "$advertised" ]
+[ "$(cd "$many" && CLAUDE_PROJECT_DIR="$many" INIT_PROJECT_CLAUDE_SETTINGS="$TMP/no-cml.json" bash -c "$advertised" < /dev/null | grep -c '^- specs/')" -eq 26 ]
 
 marker_dir="$TMP/markers"
 mkdir -p "$marker_dir"

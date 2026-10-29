@@ -58,6 +58,11 @@ fi
 if [ "$hidden" -gt 0 ]; then
   script_dir=$(cd "$(dirname "$0")" 2>/dev/null && pwd) || script_dir=$(dirname "$0")
   script_rel="${script_dir#"$PROJECT_DIR"/}/$(basename "$0")"
+  # 안내한 명령을 그대로 붙여 넣어도 실행되도록, 셸 특수문자가 있으면 작은따옴표로 감싼다.
+  q="'"
+  case "$script_rel" in
+    *[!A-Za-z0-9_./-]*) script_rel="'${script_rel//$q/$q\\$q$q}'" ;;
+  esac
   lines="${lines}- 외 ${hidden}건(그중 30일 넘게 갱신되지 않은 문서 ${hidden_stale}건). 전체 목록: 프로젝트 루트에서 \`bash ${script_rel} --all\`"$'\n'
 fi
 
