@@ -5,7 +5,12 @@ set -uo pipefail
 . "$(dirname "$0")/lib/common.sh" || exit 0
 command -v jq >/dev/null 2>&1 || exit 0
 
-lines=""
+# 항목마다 "정렬 날짜␟30일 초과 여부␟안내 줄"을 모은 뒤 최근 갱신 순으로 상위 SHOWN_LIMIT건만 싣는다.
+# 수백 건(수십 KB)을 다 실으면 Claude Code가 출력을 파일로 빼서 앞부분만 전달하므로,
+# 나머지는 건수와 전체 목록 명령으로 대신한다.
+SHOWN_LIMIT=20
+sep=$'\037'
+entries=""
 date_values=()
 date_days=()
 date_count=0
@@ -26,11 +31,40 @@ while IFS=$'\034' read -r status updated context_file; do
     fi
     days=${date_days[$cache_index]}
   fi
+  stale=0
   if [ -n "$days" ] && [ "$days" -gt 30 ]; then
-    extra=" — ${days}일 경과: 계속 진행할지, specs/_archive/로 옮길지 검토"
+    extra=" — ${days}일 경과: 계속 진행할지, specs/_archive/로 옮길지 검토"; stale=1
   fi
-  lines="${lines}- ${rel} (상태: ${status}, 마지막 갱신: ${updated:-미기재})${extra}"$'\n'
+  key=""
+  [[ "$updated" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2} ]] && key="${updated:0:10}"
+  entries="${entries}${key}${sep}${stale}${sep}- ${rel} (상태: ${status}, 마지막 갱신: ${updated:-미기재})${extra}"$'\n'
 done < <(feature_context_metadata)
+
+lines="" all_lines="" shown=0 hidden=0 hidden_stale=0
+while IFS="$sep" read -r _ stale line; do
+  [ -n "$line" ] || continue
+  all_lines="${all_lines}${line}"$'\n'
+  if [ "$shown" -lt "$SHOWN_LIMIT" ]; then
+    lines="${lines}${line}"$'\n'; shown=$((shown + 1))
+  else
+    hidden=$((hidden + 1)); hidden_stale=$((hidden_stale + stale))
+  fi
+done < <(printf '%s' "$entries" | sort -s -r -t "$sep" -k1,1)
+
+if [ "${1:-}" = "--all" ]; then
+  printf '%s' "$all_lines"
+  exit 0
+fi
+if [ "$hidden" -gt 0 ]; then
+  script_dir=$(cd "$(dirname "$0")" 2>/dev/null && pwd) || script_dir=$(dirname "$0")
+  script_rel="${script_dir#"$PROJECT_DIR"/}/$(basename "$0")"
+  # 안내한 명령을 그대로 붙여 넣어도 실행되도록, 셸 특수문자가 있으면 작은따옴표로 감싼다.
+  q="'"
+  case "$script_rel" in
+    *[!A-Za-z0-9_./-]*) script_rel="'${script_rel//$q/$q\\$q$q}'" ;;
+  esac
+  lines="${lines}- 외 ${hidden}건(그중 30일 넘게 갱신되지 않은 문서 ${hidden_stale}건). 전체 목록: 프로젝트 루트에서 \`bash ${script_rel} --all\`"$'\n'
+fi
 
 mem_note=""
 # Tokenize the registered command without executing it; preserve quoted spaces.

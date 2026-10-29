@@ -57,6 +57,36 @@ assert_json_event "$out" SessionStart
 printf '%s' "$out" | jq -e '.hookSpecificOutput.additionalContext | contains("specs/demo") and (contains("specs/legacy") | not) and (contains("상태: 미기재") | not)' >/dev/null
 rm -rf "$project/specs/legacy"
 
+# 진행 중 문서가 많으면 최근 갱신 순 상위 20건만 싣고 나머지는 건수와 --all 명령으로 대신한다.
+# 출력이 수십 KB가 되면 Claude Code가 파일로 빼서 앞부분만 전달하기 때문이다.
+many="$TMP/many"
+for i in $(seq -w 1 24); do
+  mkdir -p "$many/specs/f$i"
+  printf '%s\n' '---' "상태: 진행중($i)" "마지막 갱신: 2030-01-$i" '---' > "$many/specs/f$i/context.md"
+done
+mkdir -p "$many/specs/old" "$many/specs/undated"
+printf '%s\n' '---' '상태: 진행중(old)' '마지막 갱신: 2000-01-01' '---' > "$many/specs/old/context.md"
+printf '%s\n' '---' '상태: 진행중(undated)' '---' > "$many/specs/undated/context.md"
+out=$(CLAUDE_PROJECT_DIR="$many" INIT_PROJECT_CLAUDE_SETTINGS="$TMP/no-cml.json" bash "$HOOKS/session_start.sh" < "$FIXTURES/session_start.json")
+ctx=$(printf '%s' "$out" | jq -r '.hookSpecificOutput.additionalContext')
+[ "$(printf '%s\n' "$ctx" | grep -c '^- specs/')" -eq 20 ]
+[ "$(printf '%s\n' "$ctx" | grep -m1 '^- specs/')" = '- specs/f24/context.md (상태: 진행중(24), 마지막 갱신: 2030-01-24)' ]
+printf '%s\n' "$ctx" | grep -q '^- 외 6건(그중 30일 넘게 갱신되지 않은 문서 1건)\. 전체 목록: 프로젝트 루트에서 `bash [^`]*\.claude/hooks/session_start\.sh --all`$'
+if printf '%s\n' "$ctx" | grep -q 'specs/f04/'; then exit 1; fi
+all=$(CLAUDE_PROJECT_DIR="$many" INIT_PROJECT_CLAUDE_SETTINGS="$TMP/no-cml.json" bash "$HOOKS/session_start.sh" --all < /dev/null)
+[ "$(printf '%s\n' "$all" | grep -c '^- specs/')" -eq 26 ]
+[ "$(printf '%s\n' "$all" | head -1)" = '- specs/f24/context.md (상태: 진행중(24), 마지막 갱신: 2030-01-24)' ]
+printf '%s\n' "$all" | grep -q '^- specs/old/context.md (상태: 진행중(old), 마지막 갱신: 2000-01-01) — [0-9]*일 경과'
+[ "$(printf '%s\n' "$all" | tail -1)" = '- specs/undated/context.md (상태: 진행중(undated), 마지막 갱신: 미기재)' ]
+# 안내된 --all 명령은 공백·따옴표가 든 훅 경로에서도 프로젝트 루트에서 그대로 실행된다.
+spaced="$TMP/hook dir's copy"
+mkdir -p "$spaced"
+cp -R "$HOOKS/." "$spaced/"
+out=$(CLAUDE_PROJECT_DIR="$many" INIT_PROJECT_CLAUDE_SETTINGS="$TMP/no-cml.json" bash "$spaced/session_start.sh" < "$FIXTURES/session_start.json")
+advertised=$(printf '%s' "$out" | jq -r '.hookSpecificOutput.additionalContext' | sed -n 's/^- 외 .*전체 목록: 프로젝트 루트에서 `\(.*\)`$/\1/p')
+[ -n "$advertised" ]
+[ "$(cd "$many" && CLAUDE_PROJECT_DIR="$many" INIT_PROJECT_CLAUDE_SETTINGS="$TMP/no-cml.json" bash -c "$advertised" < /dev/null | grep -c '^- specs/')" -eq 26 ]
+
 marker_dir="$TMP/markers"
 mkdir -p "$marker_dir"
 out=$(CLAUDE_PROJECT_DIR="$project" INIT_PROJECT_HOOK_TMPDIR="$marker_dir" bash "$HOOKS/stop_lesson_reminder.sh" < "$FIXTURES/stop.json")

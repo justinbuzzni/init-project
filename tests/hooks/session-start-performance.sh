@@ -35,7 +35,8 @@ printf '%s\n' date >> "$HOOK_TEST_COUNTER"
 exec "$HOOK_TEST_REAL_DATE" "$@"
 SH
 chmod +x "$TMP/bin/awk" "$TMP/bin/date"
-output=$(PATH="$TMP/bin:$PATH" CLAUDE_PROJECT_DIR="$project" INIT_PROJECT_CLAUDE_SETTINGS="$TMP/settings.json" bash "$ROOT/.claude/hooks/session_start.sh")
+# 87건이라 컨텍스트에는 20건만 실린다. 판정은 같은 계산을 거치는 --all 전체 목록으로 확인한다.
+output=$(PATH="$TMP/bin:$PATH" CLAUDE_PROJECT_DIR="$project" INIT_PROJECT_CLAUDE_SETTINGS="$TMP/settings.json" bash "$ROOT/.claude/hooks/session_start.sh" --all | jq -Rs '{hookSpecificOutput: {additionalContext: .}}')
 printf '%s' "$output" | jq -e '
   .hookSpecificOutput.additionalContext |
   contains("specs/active-80/context.md") and contains("일 경과")
@@ -65,5 +66,5 @@ else
   printf '%s\n' 100001
 fi
 SH
-output=$(PATH="$TMP/bin:$PATH" CLAUDE_PROJECT_DIR="$project" INIT_PROJECT_CLAUDE_SETTINGS="$TMP/settings.json" bash "$ROOT/.claude/hooks/session_start.sh")
+output=$(PATH="$TMP/bin:$PATH" CLAUDE_PROJECT_DIR="$project" INIT_PROJECT_CLAUDE_SETTINGS="$TMP/settings.json" bash "$ROOT/.claude/hooks/session_start.sh" --all | jq -Rs '{hookSpecificOutput: {additionalContext: .}}')
 printf '%s' "$output" | jq -e '.hookSpecificOutput.additionalContext | contains("specs/active-80/context.md (상태: 진행중(Phase 1), 마지막 갱신: 2000-01-01) — 31일 경과")' >/dev/null
