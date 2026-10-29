@@ -146,7 +146,9 @@ printf '%s\n' '---' '상태: 완료' '---' > "$project/specs/demo/context.md"
 out=$(CLAUDE_PROJECT_DIR="$project" INIT_PROJECT_HOOK_TMPDIR="$marker_dir" bash "$HOOKS/stop_lesson_reminder.sh" < "$TMP/another.json")
 [ -z "$out" ]
 
-for script in "$HOOKS"/*.sh "$HOOKS"/lib/*.sh "$ROOT/scripts/bootstrap.sh" "$FIXTURES/run.sh"; do
+bash "$FIXTURES/session-start-performance.sh"
+
+for script in "$HOOKS"/*.sh "$HOOKS"/lib/*.sh "$ROOT/scripts/bootstrap.sh" "$FIXTURES"/*.sh; do
   bash -n "$script"
 done
 jq empty "$ROOT/.claude/settings.json"

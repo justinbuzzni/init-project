@@ -30,6 +30,39 @@ fm_get() {
   ' "$1" 2>/dev/null
 }
 
+feature_context_metadata() {
+  [ -d "$SPECS_DIR" ] || return 0
+  for context_file in "$SPECS_DIR"/*/context.md; do
+    [ -e "$context_file" ] || continue
+    case "$context_file" in
+      */_templates/*|*/_archive/*) continue ;;
+    esac
+    printf '%s\n' "$context_file"
+  done | awk '
+    function read_context(context_file, line, status, updated, has_status, has_updated) {
+      if ((getline line < context_file) <= 0 || line != "---") {
+        close(context_file)
+        return
+      }
+      while ((getline line < context_file) > 0) {
+        if (line == "---") break
+        if (!has_status && index(line, "상태: ") == 1) {
+          status = substr(line, length("상태: ") + 1)
+          has_status = 1
+        }
+        if (!has_updated && index(line, "마지막 갱신: ") == 1) {
+          updated = substr(line, length("마지막 갱신: ") + 1)
+          has_updated = 1
+        }
+      }
+      close(context_file)
+      if (status != "" && index(status, "완료") != 1)
+        printf "%s\034%s\034%s\n", status, updated, context_file
+    }
+    { read_context($0) }
+  ' 2>/dev/null
+}
+
 # YYYY-MM-DD → 오늘까지 경과 일수. 파싱 실패 시 출력 없음 (macOS/GNU date 모두 지원)
 days_since() {
   local d="$1" then_ts now_ts
