@@ -37,6 +37,8 @@ make_settings 2.4.0 "$TMP/cml240"
 out=$(CLAUDE_PROJECT_DIR="$project" INIT_PROJECT_CLAUDE_SETTINGS="$TMP/settings.json" bash "$HOOKS/session_start.sh" < "$FIXTURES/session_start.json")
 assert_json_event "$out" SessionStart
 printf '%s' "$out" | jq -e '.hookSpecificOutput.additionalContext | contains("mem-lesson-get") and contains("Project Lessons")' >/dev/null
+# 진행 중 기능 안내는 요청과 관련된 기능의 문서만 읽게 한다(AGENTS.md §2.1).
+printf '%s' "$out" | jq -e '.hookSpecificOutput.additionalContext | contains("요청과 관련된 기능") and contains("관련 없는 기능의 문서는 읽지 않습니다")' >/dev/null
 
 make_settings 2.3.5 "$TMP/cml235"
 out=$(CLAUDE_PROJECT_DIR="$project" INIT_PROJECT_CLAUDE_SETTINGS="$TMP/settings.json" bash "$HOOKS/session_start.sh" < "$FIXTURES/session_start.json")
