@@ -1,6 +1,6 @@
 ---
 기능: agentic-env-efficiency
-상태: 진행중(Phase 3)
+상태: 진행중(Phase 4)
 마지막 갱신: 2026-11-11
 ---
 
@@ -8,10 +8,12 @@
 
 ## 현재 상태
 
-2026-11-11 분석 제안 1~9를 구현하는 중이다. 문서 세트를 만들었고 Phase 1을 시작한다.
+제안 1~5, 7~9(T1~T8)를 구현하고 커밋했다. T9는 AGENTS.md 축소안의 diff와 전·후 평가를 준비한 상태이며 적용 여부는 사용자 결정을 기다린다.
+push·PR은 하지 않았다. CI 워크플로는 push 후에야 실행된다.
 
 ## 핵심 결정 로그 (누적, 최신이 위)
 
+- [2026-11-11] 판단: AGENTS.md에서 정책 문장을 바꾸지 않고 옮길 수 있는 것은 §2.6과 §2.8의 저장 기준뿐이며 상시 로드 분량은 6,899 → 6,643자(-3.7%)만 줄어든다 / 착수 전 추정(30~40%)은 틀렸다. 나머지는 상시 필요한 판단·승인 정책이다 / 권고: 적용하지 않는다. 줄어드는 분량이 작고, 스킬을 자동으로 읽지 않는 에이전트(Codex 등)는 저장 기준을 포인터 너머로만 보게 된다 / 더 줄이려면 승인 정책 문장 자체를 다시 써야 하며, 그 전에 평가 사례를 늘려야 한다.
 - [2026-11-11] 결정: 평가 판정은 완료 후 아카이브와 spec 완료 기준 체크를 허용 / 이유: 첫 실제 실행에서 에이전트가 AGENTS.md §2.3대로 `specs/_archive/doc-fix/`로 옮겼는데 판정이 범위 밖 변경으로 처리함 / 기각한 대안: 픽스처에서 아카이브를 금지(지침과 다른 사례가 됨) / 재검토 조건: §2.3의 완료 처리 절차가 바뀔 때.
 - [2026-11-11] 결정: 평가는 사용자 설정·플러그인·MCP·훅 없이 실행 / 이유: 버전 간 차이를 지침 파일로 한정하고 외부 전송을 막기 위함 / 한계: 훅이 주입하는 안내의 효과는 측정하지 않는다.
 - [2026-11-11] 결정: 커밋 훅은 HEAD 커밋 시각이 600초 이내일 때만 검사 / 이유: 이 작업 중 커밋 없이 `git commit` 문자열이 든 heredoc을 실행하자 과거 커밋 기준 [SPEC SYNC]가 실제로 주입됨 / 기각한 대안: tool_response 해석(스키마 미확인), 명령 문자열 패턴 강화(실패한 커밋을 못 거름) / 재검토 조건: Bash 도구 최대 실행 시간이 600초를 넘게 바뀔 때.
@@ -27,18 +29,32 @@
 
 ## 다음 세션 시작점
 
-1. tasks.md의 첫 미완료 작업부터.
+1. 사용자가 축소안을 승인하면 `git apply specs/agentic-env-efficiency/proposal-agents-md.diff` 후 세 러너를 실행하고 커밋한다. 거절하면 diff 파일을 지운다.
+2. 어느 쪽이든 결정 후 spec의 마지막 완료 기준을 체크하고 context를 완료로 바꿔 `specs/_archive/`로 옮긴다.
+3. push·PR은 사용자 요청이 있을 때 한다. 첫 CI 실행 결과(특히 macOS 러너)를 확인한다.
 
 ## 파일 맵
 
-- `.claude/hooks/lib/common.sh` — 진행 중 기능 판정
-- `scripts/bootstrap.sh` — 양식 복사·무시 목록·누락 훅 보고
-- `tests/guidelines/` — 평가 러너와 판정 자체 테스트
+- `.claude/hooks/lib/common.sh` — 네 훅 공통의 진행 중 기능 판정
+- `.claude/hooks/posttool_edit.sh`, `posttool_commit.sh` — 마커 경로·session_id 검증, 최근 커밋 확인
+- `scripts/bootstrap.sh` — 양식 복사, 무시 목록, 누락 훅 안내, 경로 검증
+- `specs/_templates/ARCHITECTURE.md`, `CONVENTIONS.md` — 소비 프로젝트용 빈 양식
+- `tests/guidelines/run.sh`, `selftest.sh` — 평가 러너와 판정 회귀
+- `.github/workflows/verify.yml` — CI
+- `specs/agentic-env-efficiency/proposal-agents-md.diff` — 승인 대기 중인 축소안
 
 ## 검증·승인 상태
 
-- 실행한 검증과 결과: 착수 전 `bash tests/hooks/run.sh`, `bash tests/bootstrap/run.sh` 통과(Darwin).
-- 미실행 검증과 이유: 아직 없음.
+- 실행한 검증과 결과:
+  - Darwin: `bash tests/hooks/run.sh`, `bash tests/bootstrap/run.sh`, `bash tests/guidelines/selftest.sh`, `jq empty` 2종, `git diff --check` 통과.
+  - Linux: Ubuntu 24.04 컨테이너(bash 5.2, mawk, GNU date)에서 세 러너와 `jq empty` 통과.
+  - 판정 자체 테스트는 판정 조건을 하나씩 뒤집은 변이 5종에서 모두 실패했다(처음에 2종이 살아남아 사례를 추가).
+  - 지침 평가(claude-sonnet-5-5, CLI 2.1.322, 조건당 1회): 현재 지침 base 통과(23턴, $0.176)·contrast 통과(11턴, $0.133), 축소안 base 통과(20턴, $0.163)·contrast 통과(13턴, $0.129). 현재 지침 base는 판정 기준을 고친 뒤 같은 결과물을 다시 판정한 것이다. 턴·비용 차이는 1회 실행의 변동 범위로 보며 효과로 해석하지 않는다. 이 사례는 옮긴 §2.6·§2.8의 행동을 시험하지 않는다.
+  - 축소안 base 실행에서 아카이브용 `git mv`가 허용 목록에 없어 거부됐다(판정에는 영향 없음). 이후 러너에 `git mv`를 허용했고, 이 변경 뒤에는 모델 실행을 다시 하지 않았다.
+- 미실행 검증과 이유:
+  - GitHub Actions 실제 실행 — push하지 않았다. macOS 러너의 jq·bash는 로컬 Darwin 통과로만 추정한다.
+  - shellcheck는 CI에 넣지 않았다. 기존 코드에 경고 4건(공용 변수 SC2034 2건, 테스트 SC2155 2건)이 있어 범위 밖이다.
+  - Windows, 기본값이 아닌 서브모듈 배치.
 - 승인된 범위·근거: 사용자 요청 "추천대로 개선 진행" — 제안 1~5, 7~9 구현과 6번 변경안 준비. CI는 로컬 파일 추가까지이며 push는 포함하지 않는다.
 - 사용자 지정 검토 지점: 없음.
-- 남은 승인 대상·재개 조건: AGENTS.md 축소안 적용 — 상시 로드 분량과 스킬 이중 서술 때문에 필요. T9의 diff와 평가 결과를 제시한 뒤 승인받는다.
+- 남은 승인 대상·재개 조건: AGENTS.md 축소안 적용 여부. diff와 평가 결과를 제시했고 권고는 "적용하지 않음"이다.

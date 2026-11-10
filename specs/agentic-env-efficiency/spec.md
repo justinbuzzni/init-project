@@ -38,7 +38,7 @@
 
 ## 완료 기준 (Definition of Done)
 
-- [ ] R1~R10에 대응하는 검증 완료 (동작은 테스트, 문서는 링크·형식·내용 검토)
-- [ ] `bash tests/hooks/run.sh`, `bash tests/bootstrap/run.sh`, 평가 판정 자체 테스트, 설정 JSON 검사 통과
-- [ ] 문서 갱신 (context.md, ARCHITECTURE.md, CONVENTIONS.md, README.md)
+- [x] R1~R10에 대응하는 검증 완료 (동작은 테스트, 문서는 링크·형식·내용 검토)
+- [x] `bash tests/hooks/run.sh`, `bash tests/bootstrap/run.sh`, 평가 판정 자체 테스트, 설정 JSON 검사 통과
+- [x] 문서 갱신 (context.md, ARCHITECTURE.md, CONVENTIONS.md, README.md)
 - [ ] R11 변경안과 평가 결과 제시, 승인 여부에 따른 후속 처리

@@ -25,6 +25,6 @@
 
 ## Phase 4: AGENTS.md 축소안
 
-- [ ] T9. 축소안 diff와 전·후 평가 결과 준비 → 검증: 평가 결과 JSON 비교
+- [x] T9. 축소안 diff와 전·후 평가 결과 준비 → 검증: 평가 결과 JSON 비교
 
 AGENTS.md 축소안 적용은 승인 대상이라 목록에 넣지 않고 [context.md](./context.md)의 "남은 승인 대상"에 기록한다.

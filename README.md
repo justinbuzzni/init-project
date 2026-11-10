@@ -11,6 +11,7 @@
 | 검증 명령·컨벤션 | [CONVENTIONS.md](docs/CONVENTIONS.md) |
 | 배포 결정 | [ADR-001](docs/adr/001-submodule-distribution.md) |
 | 진행 중 기능 | specs/[feature]/ |
+| 지침 변경 전·후 비교 | [tests/guidelines/](tests/guidelines/README.md) |
 | 문서 양식·완료 기록 | specs/_templates/, specs/_archive/ |
 | 계획·인수인계·회고 절차 | .claude/skills/ |
 | 훅 연결·구현 | .claude/settings.json, .claude/hooks/ |
