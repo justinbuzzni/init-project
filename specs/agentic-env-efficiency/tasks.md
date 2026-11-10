@@ -15,7 +15,7 @@
 
 ## Phase 2: 배포 구조
 
-- [ ] T5. 소비 프로젝트용 docs 양식을 `specs/_templates/`로 분리하고 스타터 docs에서 소비자 영역 제거 → 검증: `bash tests/bootstrap/run.sh`
+- [x] T5. 소비 프로젝트용 docs 양식을 `specs/_templates/`로 분리하고 스타터 docs에서 소비자 영역 제거 → 검증: `bash tests/bootstrap/run.sh`
 - [ ] T6. bootstrap 재실행 시 누락된 훅 등록 보고, 서브모듈 경로의 sed 특수문자 처리 → 검증: `bash tests/bootstrap/run.sh`
 
 ## Phase 3: 측정과 CI

@@ -39,10 +39,10 @@ cat > AGENTS.md <<EOF
 EOF
 created "AGENTS.md"; fi
 
-echo "[2/6] docs/ 뼈대"
+echo "[2/6] docs/ 뼈대 (빈 양식 복사)"
 mkdir -p docs/adr
 for f in ARCHITECTURE.md CONVENTIONS.md; do
-  if [ -f "docs/$f" ]; then skipped "docs/$f"; else cp "$SUB/docs/$f" "docs/$f"; created "docs/$f"; fi
+  if [ -f "docs/$f" ]; then skipped "docs/$f"; else cp "$SUB/specs/_templates/$f" "docs/$f"; created "docs/$f"; fi
 done
 
 echo "[3/6] specs/ (템플릿은 서브모듈 심링크 — 중앙 업데이트 반영)"
@@ -90,7 +90,7 @@ done
 
 echo ""
 echo "부트스트랩 완료. 다음 단계:"
-echo "  1) docs/ARCHITECTURE.md의 소비 프로젝트 작성 영역과 docs/CONVENTIONS.md의 소비 프로젝트 명령어를 실제 내용으로 채우세요"
+echo "  1) docs/ARCHITECTURE.md의 '아직 정의되지 않음'과 docs/CONVENTIONS.md의 '미정' 항목을 실제 내용으로 채우세요"
 echo "  2) (권장) npm i -g claude-memory-layer && claude-memory-layer install && claude-memory-layer import"
 echo "  3) Claude Code를 재시작하면 훅·스킬이 활성화됩니다"
 echo "  4) 스타터 업데이트 반영: git submodule update --remote $SUB"

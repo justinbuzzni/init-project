@@ -7,7 +7,7 @@
 | 필요 | 원본 |
 |------|------|
 | 자율성·명확화·승인·완료 정책 | [AGENTS.md](AGENTS.md) |
-| 스타터 구조·소비 프로젝트 구조 작성 | [ARCHITECTURE.md](docs/ARCHITECTURE.md) |
+| 스타터 구조 | [ARCHITECTURE.md](docs/ARCHITECTURE.md) |
 | 검증 명령·컨벤션 | [CONVENTIONS.md](docs/CONVENTIONS.md) |
 | 배포 결정 | [ADR-001](docs/adr/001-submodule-distribution.md) |
 | 진행 중 기능 | specs/[feature]/ |
@@ -33,7 +33,7 @@ bash init-project/scripts/bootstrap.sh
 | 산출물 | 방식 | 업데이트 시 주의 |
 |--------|------|------------------|
 | AGENTS.md·CLAUDE.md | 공통 지침 포인터 생성 | 기존 파일은 자동 병합하지 않음 |
-| docs/ARCHITECTURE.md·CONVENTIONS.md | 복사 | 소비 프로젝트 내용으로 작성·유지 |
+| docs/ARCHITECTURE.md·CONVENTIONS.md | specs/_templates의 빈 양식 복사 | 소비 프로젝트 내용으로 작성·유지 |
 | specs/_templates·.claude/skills/* | 심링크 | 스타터 버전 변경 시 함께 바뀜 |
 | .claude/settings.json | 훅 경로를 스타터로 치환 | 기존 설정은 수동 병합 |
 | .mcp.json | 없으면 복사 | 실제 MCP 가용성은 별도 확인 |
@@ -47,7 +47,7 @@ bash init-project/scripts/bootstrap.sh
 
 ### 도입 후
 
-1. docs의 **소비 프로젝트 작성 영역**을 실제 구조·검증 명령으로 채운다. 스타터 설명을 애플리케이션 구조로 간주하지 않는다.
+1. docs의 "아직 정의되지 않음"·"미정" 항목을 실제 구조·검증 명령으로 채운다.
 2. Claude Code 훅을 사용할 경우 bash와 jq 가용성을 확인한다.
 3. 메모리를 사용할 경우 해당 패키지 설치·연결 상태를 확인한다. .mcp.json 존재만으로 인증·실행·자동 기록을 보장하지 않는다.
 4. [CONVENTIONS.md](docs/CONVENTIONS.md)에 따라 연결과 검증 명령을 확인한다.

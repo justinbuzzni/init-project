@@ -13,11 +13,10 @@ chmod +x "$TMP/WINDOWS"
 
 new_project() {
   local project="$TMP/WINDOWS USER/$1"
-  mkdir -p "$project/init-project/"{specs,docs,scripts,.claude}
+  mkdir -p "$project/init-project/"{specs,scripts,.claude}
   # 배포 입력만 복사해 사용자 .env, git 메타데이터, 작업 산출물을 격리한다.
   cp "$ROOT/AGENTS.md" "$ROOT/CLAUDE.md" "$ROOT/.mcp.json" "$project/init-project/"
   cp "$ROOT/scripts/bootstrap.sh" "$project/init-project/scripts/"
-  cp "$ROOT/docs/ARCHITECTURE.md" "$ROOT/docs/CONVENTIONS.md" "$project/init-project/docs/"
   cp -R "$ROOT/.claude/settings.json" "$ROOT/.claude/hooks" "$ROOT/.claude/skills" "$project/init-project/.claude/"
   cp -R "$ROOT/specs/_templates" "$project/init-project/specs/"
   echo "$project"
@@ -32,7 +31,9 @@ assert_distribution() {
   grep -qF 'init-project/AGENTS.md' "$project/AGENTS.md"
   grep -qF '@init-project/AGENTS.md' "$project/CLAUDE.md"
   for name in ARCHITECTURE.md CONVENTIONS.md; do
-    cmp "$project/init-project/docs/$name" "$project/docs/$name"
+    cmp "$project/init-project/specs/_templates/$name" "$project/docs/$name"
+    # 소비 프로젝트의 docs 는 빈 양식이며 스타터 내부 설명을 싣지 않는다.
+    if grep -qE 'init-project|bootstrap|session_start' "$project/docs/$name"; then return 1; fi
   done
   cmp "$project/init-project/.mcp.json" "$project/.mcp.json"
   jq empty "$project/.mcp.json"
@@ -154,7 +155,7 @@ cmp "$TMP/expected-ignore" "$project/.gitignore"
 # 5) 일부 배포 단계가 끝난 상태에서 재실행한다. 파일 쓰기 도중의 중단은 이 검사의 범위 밖이다.
 project=$(new_project partial)
 mkdir -p "$project/docs" "$project/specs"
-cp "$project/init-project/docs/ARCHITECTURE.md" "$project/docs/ARCHITECTURE.md"
+cp "$project/init-project/specs/_templates/ARCHITECTURE.md" "$project/docs/ARCHITECTURE.md"
 ln -s ../init-project/specs/_templates "$project/specs/_templates"
 bootstrap "$project"
 assert_distribution "$project"
