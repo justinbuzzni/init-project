@@ -43,7 +43,7 @@ bash "$RUN" judge "$TMP/both" base | jq -e '.checks.readme_fixed and .checks.usa
 
 # 커밋한 결과도 기준 커밋과 비교해 같은 판정을 받는다.
 git -C "$TMP/both" add -A
-git -C "$TMP/both" commit -q -m done
+git -C "$TMP/both" commit -q -m completed
 [ "$(verdict "$TMP/both" base)" = pass ]
 printf 'note\n' > "$TMP/both/NOTES.md"
 git -C "$TMP/both" add -A

@@ -17,6 +17,7 @@ init-project는 에이전트 지침·스킬·문서 템플릿·리마인더 훅�
 | 선택적 절차 | 계획·인수인계·회고 | .claude/skills/ |
 | 리마인더 | 기능 탐색·편집·커밋 안내 | .claude/hooks/ |
 | 배포 | 기존 파일을 보존하며 문서 복사·심링크·설정 생성 | scripts/bootstrap.sh |
+| 검증 | 훅·bootstrap·평가 판정 회귀와 CI | tests/, .github/workflows/verify.yml |
 | 문서 | 스타터 사실·진행 상태 | docs/, specs/ |
 | 양식 | 기능 문서·ADR과 소비 프로젝트 docs의 빈 양식 | specs/_templates/ |
 

@@ -73,6 +73,6 @@ SessionStart는 등록된 CML의 버전이 2.4.0 이상이면 `mem-lesson-get` �
 | PostToolUse (Bash) | `posttool_commit.sh` | 커밋의 문서 누락 리마인더 |
 | Stop | `stop_lesson_reminder.sh` | 턴을 연장하지 않는 사용자 표시용 교훈 저장 리마인더 |
 
-훅 수정 검증은 `bash tests/hooks/run.sh`로 실행한다.
+훅 수정 검증은 `bash tests/hooks/run.sh`로 실행한다. 전체 검증 명령과 CI는 [CONVENTIONS.md](docs/CONVENTIONS.md)에 있다.
 테스트는 `INIT_PROJECT_CLAUDE_SETTINGS`와 `INIT_PROJECT_HOOK_TMPDIR`로 임시 설정·마커 경로를 주입하며 실제 사용자 설정을 읽거나 쓰지 않는다.
 기존 소비 프로젝트는 서브모듈 갱신 후 bootstrap을 다시 실행한다. 기존 settings.json은 덮어쓰지 않으며, 등록되지 않은 스타터 훅이 있으면 `! 등록되지 않은 스타터 훅: 이벤트 → 스크립트` 줄로 알려 주므로 해당 항목을 직접 병합한다(jq 필요).
