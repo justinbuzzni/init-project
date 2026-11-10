@@ -11,7 +11,7 @@
 - [x] T1. 편집·커밋·Stop 훅의 진행 중 판정을 SessionStart와 통일, 편집 훅 마커 경로·session_id 검증, 커밋 훅 오탐 제거 → 검증: `bash tests/hooks/run.sh`
 - [x] T2. `.gitignore`와 bootstrap 무시 목록에 `.env` 추가(스타터는 `.ax/`도) → 검증: `bash tests/bootstrap/run.sh`, `git status`
 - [x] T3. SessionStart 안내 문구를 "요청과 관련된 기능만"으로 수정 → 검증: `bash tests/hooks/run.sh`
-- [ ] T4. plan·tasks 양식의 승인 상태 기록을 context로 통합 → 검증: 양식·스킬 문구 일관성 검토
+- [x] T4. plan·tasks 양식의 승인 상태 기록을 context로 통합 → 검증: 양식·스킬 문구 일관성 검토
 
 ## Phase 2: 배포 구조
 
@@ -27,6 +27,4 @@
 
 - [ ] T9. 축소안 diff와 전·후 평가 결과 준비 → 검증: 평가 결과 JSON 비교
 
-## 승인 필요한 변경 (해당 시)
-
-- [ ] (제안) AGENTS.md 축소안 적용 — 필요해진 이유: 상시 로드 분량과 스킬 이중 서술. T9 결과로 승인 요청.
+AGENTS.md 축소안 적용은 승인 대상이라 목록에 넣지 않고 [context.md](./context.md)의 "남은 승인 대상"에 기록한다.
