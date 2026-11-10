@@ -35,10 +35,10 @@ bash init-project/scripts/bootstrap.sh
 | AGENTS.md·CLAUDE.md | 공통 지침 포인터 생성 | 기존 파일은 자동 병합하지 않음 |
 | docs/ARCHITECTURE.md·CONVENTIONS.md | specs/_templates의 빈 양식 복사 | 소비 프로젝트 내용으로 작성·유지 |
 | specs/_templates·.claude/skills/* | 심링크 | 스타터 버전 변경 시 함께 바뀜 |
-| .claude/settings.json | 훅 경로를 스타터로 치환 | 기존 설정은 수동 병합 |
+| .claude/settings.json | 훅 경로를 스타터로 치환 | 기존 설정은 수동 병합 (재실행 시 누락 훅 안내) |
 | .mcp.json | 없으면 복사 | 실제 MCP 가용성은 별도 확인 |
 
-기본 디렉터리명 init-project 사용을 권장한다. 다른 배치는 스크립트의 상대 심링크 경로를 검증해야 한다.
+기본 디렉터리명 init-project 사용을 권장한다. 다른 배치는 스크립트의 상대 심링크 경로를 검증해야 하며, 경로에는 영문·숫자와 `. _ / -`만 쓸 수 있다.
 업데이트는 소비 프로젝트별로 스타터 변경을 검토한 뒤 해당 서브모듈 버전을 갱신한다. 여러 프로젝트가 자동으로 갱신되는 것은 아니다.
 
 ### 복사형
@@ -75,4 +75,4 @@ SessionStart는 등록된 CML의 버전이 2.4.0 이상이면 `mem-lesson-get` �
 
 훅 수정 검증은 `bash tests/hooks/run.sh`로 실행한다.
 테스트는 `INIT_PROJECT_CLAUDE_SETTINGS`와 `INIT_PROJECT_HOOK_TMPDIR`로 임시 설정·마커 경로를 주입하며 실제 사용자 설정을 읽거나 쓰지 않는다.
-기존 소비 프로젝트는 서브모듈 갱신과 gitlink 커밋 후 Stop 등록 여부를 확인한다. bootstrap은 기존 settings.json을 덮어쓰지 않으므로 누락된 등록은 해당 프로젝트에서 별도로 병합해야 한다.
+기존 소비 프로젝트는 서브모듈 갱신 후 bootstrap을 다시 실행한다. 기존 settings.json은 덮어쓰지 않으며, 등록되지 않은 스타터 훅이 있으면 `! 등록되지 않은 스타터 훅: 이벤트 → 스크립트` 줄로 알려 주므로 해당 항목을 직접 병합한다(jq 필요).

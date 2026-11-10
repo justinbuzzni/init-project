@@ -166,4 +166,25 @@ assert_distribution "$project"
 distribution_manifest "$project" > "$TMP/partial-after"
 cmp "$TMP/partial-before" "$TMP/partial-after"
 
+# 6) 기존 settings.json 에 등록되지 않은 스타터 훅은 재실행 시 이름으로 알려 준다. 자동 병합은 하지 않는다.
+project=$(new_project missing-hooks)
+bootstrap "$project"
+report=$(cd "$project" && bash init-project/scripts/bootstrap.sh)
+if printf '%s\n' "$report" | grep -q '등록되지 않은'; then exit 1; fi
+jq 'del(.hooks.SessionStart) | .hooks.PostToolUse |= map(select(.matcher != "Bash"))' \
+  "$project/.claude/settings.json" > "$TMP/pruned.json"
+cp "$TMP/pruned.json" "$project/.claude/settings.json"
+report=$(cd "$project" && bash init-project/scripts/bootstrap.sh)
+printf '%s\n' "$report" | grep -qF '등록되지 않은 스타터 훅: SessionStart → session_start.sh'
+printf '%s\n' "$report" | grep -qF '등록되지 않은 스타터 훅: PostToolUse → posttool_commit.sh'
+if printf '%s\n' "$report" | grep -qE '등록되지 않은 스타터 훅: .*(stop_lesson_reminder|posttool_edit)\.sh'; then exit 1; fi
+cmp "$TMP/pruned.json" "$project/.claude/settings.json"
+
+# 7) 훅 명령과 sed 치환을 깨뜨리는 서브모듈 경로는 아무것도 만들지 않고 거절한다.
+project=$(new_project bad-path)
+mv "$project/init-project" "$project/starter#1"
+if (cd "$project" && bash 'starter#1/scripts/bootstrap.sh' 'starter#1' >/dev/null 2> "$TMP/stderr"); then exit 1; fi
+grep -qF 'starter#1' "$TMP/stderr"
+[ ! -e "$project/CLAUDE.md" ] && [ ! -e "$project/.claude" ]
+
 echo "bootstrap: all tests passed ($(uname -s))"

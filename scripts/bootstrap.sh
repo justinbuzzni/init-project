@@ -6,6 +6,12 @@
 set -euo pipefail
 
 SUB="${1:-init-project}"
+# 경로는 훅 명령과 sed 치환에 그대로 들어간다. 셸·sed 특수문자가 있으면 조용히 깨지므로 거절한다.
+case "$SUB" in
+  *[!A-Za-z0-9._/-]*)
+    echo "오류: 서브모듈 경로에는 영문·숫자와 . _ / - 만 쓸 수 있습니다: $SUB" >&2
+    exit 1 ;;
+esac
 if [ ! -f "$SUB/AGENTS.md" ]; then
   echo "오류: '$SUB/'에서 스타터를 찾을 수 없습니다. 먼저 서브모듈을 추가하세요:" >&2
   echo "  git submodule add <repo-url> $SUB" >&2
@@ -14,6 +20,11 @@ fi
 
 created() { echo "  + $1"; }
 skipped() { echo "  = $1 (이미 존재, 건너뜀)"; }
+# settings.json 의 command 훅을 "이벤트<TAB>명령" 줄로 출력
+hook_commands() {
+  jq -r '.hooks // {} | to_entries[] | .key as $event | .value[]?.hooks[]?
+    | select(.type == "command") | "\($event)\t\(.command)"' "$1" 2>/dev/null
+}
 
 echo "[1/6] 루트 가이드 (CLAUDE.md / AGENTS.md 포인터)"
 if [ -f CLAUDE.md ]; then skipped "CLAUDE.md"; else
@@ -63,7 +74,18 @@ if [ -f .claude/settings.json ]; then
     mv .claude/settings.json.tmp .claude/settings.json
     echo "  ~ .claude/settings.json: 훅 명령의 \${CLAUDE_PROJECT_DIR}를 따옴표로 감쌈 (공백 경로 대응)"
   fi
-  skipped ".claude/settings.json — 훅 병합이 필요하면 $SUB/.claude/settings.json의 경로에 '$SUB/'를 붙여 수동 반영"
+  skipped ".claude/settings.json"
+  # 스타터에 훅이 추가돼도 기존 설정은 덮어쓰지 않으므로, 빠진 등록을 이름으로 알려 준다.
+  if command -v jq >/dev/null 2>&1 && registered=$(hook_commands .claude/settings.json); then
+    while IFS=$'\t' read -r event command; do
+      script=${command##*/}
+      if ! printf '%s\n' "$registered" | grep "^$event"$'\t' | grep -qF "/$SUB/.claude/hooks/$script"; then
+        echo "  ! 등록되지 않은 스타터 훅: $event → $script ($SUB/.claude/settings.json의 항목을 경로에 '$SUB/'를 붙여 병합)"
+      fi
+    done < <(hook_commands "$SUB/.claude/settings.json")
+  else
+    echo "  ! 훅 등록을 확인하지 못했습니다 (jq 없음 또는 JSON 오류). $SUB/.claude/settings.json과 직접 비교하세요"
+  fi
 else
   sed "s#}\\\\\"/.claude/hooks/#}\\\\\"/$SUB/.claude/hooks/#g" \
     "$SUB/.claude/settings.json" > .claude/settings.json
