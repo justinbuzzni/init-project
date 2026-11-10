@@ -15,6 +15,10 @@ active=$(list_feature_contexts | head -1)
 [ -z "$active" ] && exit 0
 
 cd "$PROJECT_DIR" 2>/dev/null || exit 0
+# 명령에 git commit 문자열만 있고 새 커밋은 없는 경우(--dry-run, grep, 실패한 커밋)를 거른다.
+# 600초는 Bash 도구의 최대 실행 시간이다.
+commit_ts=$(git log -1 --format=%ct 2>/dev/null) || exit 0
+[ -n "$commit_ts" ] && [ $(( $(date +%s) - commit_ts )) -le 600 ] || exit 0
 files=$(git diff --name-only HEAD~1 HEAD 2>/dev/null) || exit 0
 [ -z "$files" ] && exit 0
 
