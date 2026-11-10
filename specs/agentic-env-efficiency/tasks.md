@@ -20,7 +20,7 @@
 
 ## Phase 3: 측정과 CI
 
-- [ ] T7. 평가 러너와 판정 자체 테스트, 실제 실행 → 검증: `bash tests/guidelines/selftest.sh`, 실행 결과 JSON
+- [x] T7. 평가 러너와 판정 자체 테스트, 실제 실행 → 검증: `bash tests/guidelines/selftest.sh`, 실행 결과 JSON
 - [ ] T8. CI 워크플로 추가 → 검증: 워크플로 명령의 로컬·Linux 컨테이너 실행
 
 ## Phase 4: AGENTS.md 축소안
