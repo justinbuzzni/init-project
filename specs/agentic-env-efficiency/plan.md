@@ -33,7 +33,7 @@
 - [x] **Phase 1: 독립적인 작은 수정** → 검증: `bash tests/hooks/run.sh`, `bash tests/bootstrap/run.sh`
 - [x] **Phase 2: 배포 구조** → 검증: `bash tests/bootstrap/run.sh`, 문서 링크 검토
 - [x] **Phase 3: 측정과 CI** → 검증: `bash tests/guidelines/selftest.sh`, 평가 실제 실행 1회 이상, 가능하면 Linux 컨테이너 실행
-- [ ] **Phase 4: AGENTS.md 축소안** → 검증: 전·후 평가 결과와 diff 제시 (승인 지점)
+- [x] **Phase 4: AGENTS.md 축소안** → 검증: 전·후 평가 결과와 diff 제시 (승인 지점)
 
 ## 리스크와 대응
 
