@@ -15,8 +15,8 @@ esac
 active=$(list_feature_contexts | head -1)
 [ -z "$active" ] && exit 0
 
-session_id=$(printf '%s' "$input" | jq -r '.session_id // "default"' 2>/dev/null)
-marker="${TMPDIR:-/tmp}/claude_spec_sync_${session_id:-default}"
+session_id=$(printf '%s' "$input" | jq -er '.session_id // "default" | strings | select(test("^[A-Za-z0-9_.-]+$"))' 2>/dev/null) || exit 0
+marker="$HOOK_TMPDIR/claude_spec_sync_${session_id}"
 if [ -f "$marker" ] && [ -n "$(find "$marker" -mmin -30 2>/dev/null)" ]; then
   exit 0
 fi

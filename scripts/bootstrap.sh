@@ -6,6 +6,12 @@
 set -euo pipefail
 
 SUB="${1:-init-project}"
+# 경로는 훅 명령과 sed 치환에 그대로 들어간다. 셸·sed 특수문자가 있으면 조용히 깨지므로 거절한다.
+case "$SUB" in
+  *[!A-Za-z0-9._/-]*)
+    echo "오류: 서브모듈 경로에는 영문·숫자와 . _ / - 만 쓸 수 있습니다: $SUB" >&2
+    exit 1 ;;
+esac
 if [ ! -f "$SUB/AGENTS.md" ]; then
   echo "오류: '$SUB/'에서 스타터를 찾을 수 없습니다. 먼저 서브모듈을 추가하세요:" >&2
   echo "  git submodule add <repo-url> $SUB" >&2
@@ -14,6 +20,11 @@ fi
 
 created() { echo "  + $1"; }
 skipped() { echo "  = $1 (이미 존재, 건너뜀)"; }
+# settings.json 의 command 훅을 "이벤트<TAB>명령" 줄로 출력
+hook_commands() {
+  jq -r '.hooks // {} | to_entries[] | .key as $event | .value[]?.hooks[]?
+    | select(.type == "command") | "\($event)\t\(.command)"' "$1" 2>/dev/null
+}
 
 echo "[1/6] 루트 가이드 (CLAUDE.md / AGENTS.md 포인터)"
 if [ -f CLAUDE.md ]; then skipped "CLAUDE.md"; else
@@ -39,10 +50,10 @@ cat > AGENTS.md <<EOF
 EOF
 created "AGENTS.md"; fi
 
-echo "[2/6] docs/ 뼈대"
+echo "[2/6] docs/ 뼈대 (빈 양식 복사)"
 mkdir -p docs/adr
 for f in ARCHITECTURE.md CONVENTIONS.md; do
-  if [ -f "docs/$f" ]; then skipped "docs/$f"; else cp "$SUB/docs/$f" "docs/$f"; created "docs/$f"; fi
+  if [ -f "docs/$f" ]; then skipped "docs/$f"; else cp "$SUB/specs/_templates/$f" "docs/$f"; created "docs/$f"; fi
 done
 
 echo "[3/6] specs/ (템플릿은 서브모듈 심링크 — 중앙 업데이트 반영)"
@@ -63,7 +74,18 @@ if [ -f .claude/settings.json ]; then
     mv .claude/settings.json.tmp .claude/settings.json
     echo "  ~ .claude/settings.json: 훅 명령의 \${CLAUDE_PROJECT_DIR}를 따옴표로 감쌈 (공백 경로 대응)"
   fi
-  skipped ".claude/settings.json — 훅 병합이 필요하면 $SUB/.claude/settings.json의 경로에 '$SUB/'를 붙여 수동 반영"
+  skipped ".claude/settings.json"
+  # 스타터에 훅이 추가돼도 기존 설정은 덮어쓰지 않으므로, 빠진 등록을 이름으로 알려 준다.
+  if command -v jq >/dev/null 2>&1 && registered=$(hook_commands .claude/settings.json); then
+    while IFS=$'\t' read -r event command; do
+      script=${command##*/}
+      if ! printf '%s\n' "$registered" | grep "^$event"$'\t' | grep -qF "/$SUB/.claude/hooks/$script"; then
+        echo "  ! 등록되지 않은 스타터 훅: $event → $script ($SUB/.claude/settings.json의 항목을 경로에 '$SUB/'를 붙여 병합)"
+      fi
+    done < <(hook_commands "$SUB/.claude/settings.json")
+  else
+    echo "  ! 훅 등록을 확인하지 못했습니다 (jq 없음 또는 JSON 오류). $SUB/.claude/settings.json과 직접 비교하세요"
+  fi
 else
   sed "s#}\\\\\"/.claude/hooks/#}\\\\\"/$SUB/.claude/hooks/#g" \
     "$SUB/.claude/settings.json" > .claude/settings.json
@@ -83,14 +105,14 @@ echo "[6/6] MCP 등록 · .gitignore"
 if [ -f .mcp.json ]; then skipped ".mcp.json — claude-memory-layer 항목이 있는지 확인하세요"; else
   cp "$SUB/.mcp.json" .mcp.json; created ".mcp.json"; fi
 touch .gitignore
-for line in "memory/" ".DS_Store"; do
+for line in "memory/" ".DS_Store" ".env"; do
   if grep -qxF "$line" .gitignore; then skipped ".gitignore: $line"; else
     echo "$line" >> .gitignore; created ".gitignore += $line"; fi
 done
 
 echo ""
 echo "부트스트랩 완료. 다음 단계:"
-echo "  1) docs/ARCHITECTURE.md의 소비 프로젝트 작성 영역과 docs/CONVENTIONS.md의 소비 프로젝트 명령어를 실제 내용으로 채우세요"
+echo "  1) docs/ARCHITECTURE.md의 '아직 정의되지 않음'과 docs/CONVENTIONS.md의 '미정' 항목을 실제 내용으로 채우세요"
 echo "  2) (권장) npm i -g claude-memory-layer && claude-memory-layer install && claude-memory-layer import"
 echo "  3) Claude Code를 재시작하면 훅·스킬이 활성화됩니다"
 echo "  4) 스타터 업데이트 반영: git submodule update --remote $SUB"

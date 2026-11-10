@@ -98,7 +98,7 @@ fi
 msg="$mem_note"
 if [ -n "$lines" ]; then
   msg="[ACTIVE FEATURES] 진행 중인 기능 문서:
-${lines}작업 시작 전 해당 context.md를 읽고, 현재 상태를 한 문단으로 보고한 뒤 AGENTS.md §2.1에 따라 진행하세요.
+${lines}요청과 관련된 기능이 있으면 그 context.md를 읽고 상태를 보고한 뒤 AGENTS.md §2.1에 따라 진행하세요. 관련 없는 기능의 문서는 읽지 않습니다.
 ${mem_note}"
 fi
 [ -z "$msg" ] && exit 0

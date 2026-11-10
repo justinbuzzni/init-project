@@ -37,6 +37,8 @@ make_settings 2.4.0 "$TMP/cml240"
 out=$(CLAUDE_PROJECT_DIR="$project" INIT_PROJECT_CLAUDE_SETTINGS="$TMP/settings.json" bash "$HOOKS/session_start.sh" < "$FIXTURES/session_start.json")
 assert_json_event "$out" SessionStart
 printf '%s' "$out" | jq -e '.hookSpecificOutput.additionalContext | contains("mem-lesson-get") and contains("Project Lessons")' >/dev/null
+# 진행 중 기능 안내는 요청과 관련된 기능의 문서만 읽게 한다(AGENTS.md §2.1).
+printf '%s' "$out" | jq -e '.hookSpecificOutput.additionalContext | contains("요청과 관련된 기능") and contains("관련 없는 기능의 문서는 읽지 않습니다")' >/dev/null
 
 make_settings 2.3.5 "$TMP/cml235"
 out=$(CLAUDE_PROJECT_DIR="$project" INIT_PROJECT_CLAUDE_SETTINGS="$TMP/settings.json" bash "$HOOKS/session_start.sh" < "$FIXTURES/session_start.json")
@@ -174,6 +176,63 @@ out=$(CLAUDE_PROJECT_DIR="$project" INIT_PROJECT_HOOK_TMPDIR="$TMP/missing-marke
 [ -z "$out" ] && [ ! -s "$TMP/stderr" ]
 printf '%s\n' '---' '상태: 완료' '---' > "$project/specs/demo/context.md"
 out=$(CLAUDE_PROJECT_DIR="$project" INIT_PROJECT_HOOK_TMPDIR="$marker_dir" bash "$HOOKS/stop_lesson_reminder.sh" < "$TMP/another.json")
+[ -z "$out" ]
+
+# PostToolUse 리마인더는 진행 중 기능이 있을 때만 나온다. 편집 안내는 주입된 마커
+# 디렉터리에 세션별로 30분에 한 번이며, 경로를 벗어나는 session_id 에는 침묵한다.
+active="$TMP/active"
+edit_markers="$TMP/edit-markers"
+mkdir -p "$active/specs/demo" "$edit_markers"
+printf '%s\n' '---' '상태: 진행중(Phase 1)' '---' > "$active/specs/demo/context.md"
+edit_input='{"session_id":"edit-session","tool_input":{"file_path":"src/app.py"}}'
+out=$(printf '%s' "$edit_input" | CLAUDE_PROJECT_DIR="$active" INIT_PROJECT_HOOK_TMPDIR="$edit_markers" bash "$HOOKS/posttool_edit.sh")
+assert_json_event "$out" PostToolUse
+[ -e "$edit_markers/claude_spec_sync_edit-session" ]
+second=$(printf '%s' "$edit_input" | CLAUDE_PROJECT_DIR="$active" INIT_PROJECT_HOOK_TMPDIR="$edit_markers" bash "$HOOKS/posttool_edit.sh")
+[ -z "$second" ]
+out=$(printf '%s' '{"session_id":"../escape","tool_input":{"file_path":"src/app.py"}}' | CLAUDE_PROJECT_DIR="$active" INIT_PROJECT_HOOK_TMPDIR="$edit_markers" bash "$HOOKS/posttool_edit.sh")
+[ -z "$out" ]
+out=$(printf '%s' '{"session_id":"docs","tool_input":{"file_path":"docs/notes.md"}}' | CLAUDE_PROJECT_DIR="$active" INIT_PROJECT_HOOK_TMPDIR="$edit_markers" bash "$HOOKS/posttool_edit.sh")
+[ -z "$out" ]
+
+# 커밋 안내는 방금 만든 커밋에 코드만 있고 tasks/context 갱신이 없을 때 나온다.
+# 명령에 git commit 문자열이 있어도 새 커밋이 없으면 과거 커밋을 근거로 안내하지 않는다.
+repo="$TMP/repo"
+commit_input='{"tool_input":{"command":"git commit -m change"}}'
+commit_as() {
+  local when=$1 message=$2
+  GIT_AUTHOR_DATE="$when" GIT_COMMITTER_DATE="$when" git -C "$repo" \
+    -c user.name=hook-test -c user.email=hook-test@example.invalid commit -q -m "$message"
+}
+mkdir -p "$repo/specs/demo" "$repo/src"
+git -C "$repo" init -q
+printf '%s\n' '---' '상태: 진행중(Phase 1)' '---' > "$repo/specs/demo/context.md"
+git -C "$repo" add . && commit_as '2001-01-01T00:00:00Z' base
+printf 'one\n' > "$repo/src/app.txt"
+git -C "$repo" add . && commit_as '2001-01-02T00:00:00Z' old-code-only
+out=$(printf '%s' '{"tool_input":{"command":"git commit --dry-run"}}' | CLAUDE_PROJECT_DIR="$repo" bash "$HOOKS/posttool_commit.sh")
+[ -z "$out" ]
+printf 'two\n' > "$repo/src/app.txt"
+git -C "$repo" add . && commit_as "$(date -u +%Y-%m-%dT%H:%M:%SZ)" new-code-only
+out=$(printf '%s' "$commit_input" | CLAUDE_PROJECT_DIR="$repo" bash "$HOOKS/posttool_commit.sh")
+assert_json_event "$out" PostToolUse
+printf 'three\n' > "$repo/src/app.txt"
+printf '%s\n' '---' '상태: 진행중(Phase 2)' '---' > "$repo/specs/demo/context.md"
+git -C "$repo" add . && commit_as "$(date -u +%Y-%m-%dT%H:%M:%SZ)" code-with-context
+out=$(printf '%s' "$commit_input" | CLAUDE_PROJECT_DIR="$repo" bash "$HOOKS/posttool_commit.sh")
+[ -z "$out" ]
+
+# 상태 프론트매터가 없는 레거시 문서만 있으면 편집·커밋·Stop 리마인더도
+# SessionStart 와 같은 판정으로 침묵한다.
+printf '%s\n' '# 예전 기능 메모' '프론트매터 없음' > "$active/specs/demo/context.md"
+out=$(printf '%s' '{"session_id":"legacy","tool_input":{"file_path":"src/app.py"}}' | CLAUDE_PROJECT_DIR="$active" INIT_PROJECT_HOOK_TMPDIR="$edit_markers" bash "$HOOKS/posttool_edit.sh")
+[ -z "$out" ]
+out=$(printf '%s' '{"session_id":"legacy"}' | CLAUDE_PROJECT_DIR="$active" INIT_PROJECT_HOOK_TMPDIR="$edit_markers" bash "$HOOKS/stop_lesson_reminder.sh")
+[ -z "$out" ]
+printf '%s\n' '# 예전 기능 메모' > "$repo/specs/demo/context.md"
+printf 'four\n' > "$repo/src/app.txt"
+git -C "$repo" add src && commit_as "$(date -u +%Y-%m-%dT%H:%M:%SZ)" legacy-code-only
+out=$(printf '%s' "$commit_input" | CLAUDE_PROJECT_DIR="$repo" bash "$HOOKS/posttool_commit.sh")
 [ -z "$out" ]
 
 bash "$FIXTURES/session-start-performance.sh"

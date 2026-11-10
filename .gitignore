@@ -2,3 +2,7 @@
 memory/
 
 .DS_Store
+
+# 로컬 비밀값과 A+ Dev Studio 작업 상태
+.env
+.ax/

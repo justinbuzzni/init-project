@@ -13,11 +13,10 @@ chmod +x "$TMP/WINDOWS"
 
 new_project() {
   local project="$TMP/WINDOWS USER/$1"
-  mkdir -p "$project/init-project/"{specs,docs,scripts,.claude}
+  mkdir -p "$project/init-project/"{specs,scripts,.claude}
   # 배포 입력만 복사해 사용자 .env, git 메타데이터, 작업 산출물을 격리한다.
   cp "$ROOT/AGENTS.md" "$ROOT/CLAUDE.md" "$ROOT/.mcp.json" "$project/init-project/"
   cp "$ROOT/scripts/bootstrap.sh" "$project/init-project/scripts/"
-  cp "$ROOT/docs/ARCHITECTURE.md" "$ROOT/docs/CONVENTIONS.md" "$project/init-project/docs/"
   cp -R "$ROOT/.claude/settings.json" "$ROOT/.claude/hooks" "$ROOT/.claude/skills" "$project/init-project/.claude/"
   cp -R "$ROOT/specs/_templates" "$project/init-project/specs/"
   echo "$project"
@@ -32,7 +31,9 @@ assert_distribution() {
   grep -qF 'init-project/AGENTS.md' "$project/AGENTS.md"
   grep -qF '@init-project/AGENTS.md' "$project/CLAUDE.md"
   for name in ARCHITECTURE.md CONVENTIONS.md; do
-    cmp "$project/init-project/docs/$name" "$project/docs/$name"
+    cmp "$project/init-project/specs/_templates/$name" "$project/docs/$name"
+    # 소비 프로젝트의 docs 는 빈 양식이며 스타터 내부 설명을 싣지 않는다.
+    if grep -qE 'init-project|bootstrap|session_start' "$project/docs/$name"; then return 1; fi
   done
   cmp "$project/init-project/.mcp.json" "$project/.mcp.json"
   jq empty "$project/.mcp.json"
@@ -45,7 +46,7 @@ assert_distribution() {
     [ -f "$project/.claude/skills/$name/SKILL.md" ]
   done
   jq -e '.hooks | length > 0' "$project/.claude/settings.json" >/dev/null
-  for name in 'memory/' '.DS_Store'; do
+  for name in 'memory/' '.DS_Store' '.env'; do
     [ "$(grep -cxF "$name" "$project/.gitignore")" -eq 1 ]
   done
 }
@@ -147,14 +148,14 @@ for file in "${preserved[@]}"; do
   cmp "$TMP/preserved/$file" "$project/$file"
 done
 [ "$(readlink "$project/.claude/skills/handoff")" = '../../custom-handoff' ]
-printf 'consumer-cache/\nmemory/\n.DS_Store\n' > "$TMP/expected-ignore"
+printf 'consumer-cache/\nmemory/\n.DS_Store\n.env\n' > "$TMP/expected-ignore"
 cmp "$TMP/expected-ignore" "$project/.gitignore"
 [ -f "$project/.claude/skills/learn/SKILL.md" ]
 
 # 5) 일부 배포 단계가 끝난 상태에서 재실행한다. 파일 쓰기 도중의 중단은 이 검사의 범위 밖이다.
 project=$(new_project partial)
 mkdir -p "$project/docs" "$project/specs"
-cp "$project/init-project/docs/ARCHITECTURE.md" "$project/docs/ARCHITECTURE.md"
+cp "$project/init-project/specs/_templates/ARCHITECTURE.md" "$project/docs/ARCHITECTURE.md"
 ln -s ../init-project/specs/_templates "$project/specs/_templates"
 bootstrap "$project"
 assert_distribution "$project"
@@ -164,5 +165,26 @@ bootstrap "$project"
 assert_distribution "$project"
 distribution_manifest "$project" > "$TMP/partial-after"
 cmp "$TMP/partial-before" "$TMP/partial-after"
+
+# 6) 기존 settings.json 에 등록되지 않은 스타터 훅은 재실행 시 이름으로 알려 준다. 자동 병합은 하지 않는다.
+project=$(new_project missing-hooks)
+bootstrap "$project"
+report=$(cd "$project" && bash init-project/scripts/bootstrap.sh)
+if printf '%s\n' "$report" | grep -q '등록되지 않은'; then exit 1; fi
+jq 'del(.hooks.SessionStart) | .hooks.PostToolUse |= map(select(.matcher != "Bash"))' \
+  "$project/.claude/settings.json" > "$TMP/pruned.json"
+cp "$TMP/pruned.json" "$project/.claude/settings.json"
+report=$(cd "$project" && bash init-project/scripts/bootstrap.sh)
+printf '%s\n' "$report" | grep -qF '등록되지 않은 스타터 훅: SessionStart → session_start.sh'
+printf '%s\n' "$report" | grep -qF '등록되지 않은 스타터 훅: PostToolUse → posttool_commit.sh'
+if printf '%s\n' "$report" | grep -qE '등록되지 않은 스타터 훅: .*(stop_lesson_reminder|posttool_edit)\.sh'; then exit 1; fi
+cmp "$TMP/pruned.json" "$project/.claude/settings.json"
+
+# 7) 훅 명령과 sed 치환을 깨뜨리는 서브모듈 경로는 아무것도 만들지 않고 거절한다.
+project=$(new_project bad-path)
+mv "$project/init-project" "$project/starter#1"
+if (cd "$project" && bash 'starter#1/scripts/bootstrap.sh' 'starter#1' >/dev/null 2> "$TMP/stderr"); then exit 1; fi
+grep -qF 'starter#1' "$TMP/stderr"
+[ ! -e "$project/CLAUDE.md" ] && [ ! -e "$project/.claude" ]
 
 echo "bootstrap: all tests passed ($(uname -s))"

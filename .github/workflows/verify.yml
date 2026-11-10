@@ -1,0 +1,28 @@
+# 스타터의 회귀 검사. 모델을 호출하는 지침 평가(tests/guidelines/run.sh eval)는 비용이 들어 넣지 않는다.
+name: verify
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: 설정 JSON
+        run: jq empty .claude/settings.json .mcp.json
+      - name: 훅 회귀
+        run: bash tests/hooks/run.sh
+      - name: bootstrap 회귀
+        run: bash tests/bootstrap/run.sh
+      - name: 지침 평가 판정 회귀
+        run: bash tests/guidelines/selftest.sh
