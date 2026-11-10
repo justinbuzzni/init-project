@@ -196,7 +196,7 @@ run_eval() {
       --permission-mode acceptEdits --no-session-persistence \
       --max-budget-usd "${EVAL_MAX_BUDGET_USD:-2}" \
       --allowedTools 'Read' 'Edit' 'Write' 'Glob' 'Grep' 'Bash(grep:*)' 'Bash(ls:*)' 'Bash(cat:*)' 'Bash(date:*)' \
-        'Bash(git status:*)' 'Bash(git diff:*)' 'Bash(git log:*)' 'Bash(git add:*)' 'Bash(git commit:*)' \
+        'Bash(git status:*)' 'Bash(git diff:*)' 'Bash(git log:*)' 'Bash(git add:*)' 'Bash(git commit:*)' 'Bash(git mv:*)' \
       < /dev/null > "$work/result.json" 2> "$work/stderr") || true
 
   # 실행 자체가 실패했거나 결과를 읽을 수 없으면 파일 판정과 무관하게 판정 불가다.
