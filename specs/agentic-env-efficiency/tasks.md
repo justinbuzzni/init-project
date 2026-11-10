@@ -9,7 +9,7 @@
 ## Phase 1: 독립적인 작은 수정
 
 - [x] T1. 편집·커밋·Stop 훅의 진행 중 판정을 SessionStart와 통일, 편집 훅 마커 경로·session_id 검증, 커밋 훅 오탐 제거 → 검증: `bash tests/hooks/run.sh`
-- [ ] T2. `.gitignore`와 bootstrap 무시 목록에 `.env` 추가(스타터는 `.ax/`도) → 검증: `bash tests/bootstrap/run.sh`, `git status`
+- [x] T2. `.gitignore`와 bootstrap 무시 목록에 `.env` 추가(스타터는 `.ax/`도) → 검증: `bash tests/bootstrap/run.sh`, `git status`
 - [ ] T3. SessionStart 안내 문구를 "요청과 관련된 기능만"으로 수정 → 검증: `bash tests/hooks/run.sh`
 - [ ] T4. plan·tasks 양식의 승인 상태 기록을 context로 통합 → 검증: 양식·스킬 문구 일관성 검토
 

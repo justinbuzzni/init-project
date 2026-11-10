@@ -45,7 +45,7 @@ assert_distribution() {
     [ -f "$project/.claude/skills/$name/SKILL.md" ]
   done
   jq -e '.hooks | length > 0' "$project/.claude/settings.json" >/dev/null
-  for name in 'memory/' '.DS_Store'; do
+  for name in 'memory/' '.DS_Store' '.env'; do
     [ "$(grep -cxF "$name" "$project/.gitignore")" -eq 1 ]
   done
 }
@@ -147,7 +147,7 @@ for file in "${preserved[@]}"; do
   cmp "$TMP/preserved/$file" "$project/$file"
 done
 [ "$(readlink "$project/.claude/skills/handoff")" = '../../custom-handoff' ]
-printf 'consumer-cache/\nmemory/\n.DS_Store\n' > "$TMP/expected-ignore"
+printf 'consumer-cache/\nmemory/\n.DS_Store\n.env\n' > "$TMP/expected-ignore"
 cmp "$TMP/expected-ignore" "$project/.gitignore"
 [ -f "$project/.claude/skills/learn/SKILL.md" ]
 
